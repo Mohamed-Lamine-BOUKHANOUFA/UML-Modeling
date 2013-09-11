@@ -368,7 +368,7 @@ public class UMLProfileServices {
 				PlatformUI.getWorkbench().getDisplay().getActiveShell(),
 				profile, stereotypeSource, targetElement, false);
 		dialog.open();
-		if (dialog.getResult() != null) {
+		if (dialog.getResult() != null || !dialog.isExtraAssociation()) {
 			if (targetElement instanceof Stereotype) {
 				final Stereotype stereotypeTarget = (Stereotype) targetElement;
 				if (dialog.isExtraAssociation()) {

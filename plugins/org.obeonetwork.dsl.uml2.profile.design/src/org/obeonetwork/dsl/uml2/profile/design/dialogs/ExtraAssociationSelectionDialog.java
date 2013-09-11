@@ -82,6 +82,9 @@ public class ExtraAssociationSelectionDialog extends ImportMetaclassDialog {
 	 */
 	private Button checkButtonExtraAsso;
 
+	private static final String EMPTY_STRING = ""; //$NON-NLS-1$
+
+
 	/**
 	 * A constructor for this class.
 	 * 
@@ -118,7 +121,7 @@ public class ExtraAssociationSelectionDialog extends ImportMetaclassDialog {
 			final Profile profile, final Element source, final Element target,
 			final boolean multi) {
 		super(shell, profile, multi);
-		isExtraAssociation = false; // default value
+		isExtraAssociation = true; // default value
 		this.source = source;
 		this.target = target;
 		setTitle("Create an association or an extra association");
@@ -246,6 +249,15 @@ public class ExtraAssociationSelectionDialog extends ImportMetaclassDialog {
 			}
 		}
 		progressMonitor.done();
+	}
+
+	@Override
+	protected void okPressed() {
+		if (!isExtraAssociation) {
+			super.cancelPressed();
+		} else {
+			super.okPressed();
+		}
 	}
 
 	/**
