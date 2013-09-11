@@ -89,16 +89,10 @@ public class ExportProfileService {
 	}
 
 	/**
+	 * Export the profile as a deployable plug-in.
+	 * 
 	 * @param rootProfile
-	 */
-	/**
-	 * @param rootProfile
-	 */
-	/**
-	 * @param rootProfile
-	 */
-	/**
-	 * @param rootProfile
+	 *            the profile to export.
 	 */
 	@SuppressWarnings("restriction")
 	public void exportProfile(final Profile rootProfile) {
