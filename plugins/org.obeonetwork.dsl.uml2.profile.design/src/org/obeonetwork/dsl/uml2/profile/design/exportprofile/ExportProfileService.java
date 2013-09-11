@@ -31,6 +31,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -87,6 +88,18 @@ public class ExportProfileService {
 	public ExportProfileService() {
 	}
 
+	/**
+	 * @param rootProfile
+	 */
+	/**
+	 * @param rootProfile
+	 */
+	/**
+	 * @param rootProfile
+	 */
+	/**
+	 * @param rootProfile
+	 */
 	@SuppressWarnings("restriction")
 	public void exportProfile(final Profile rootProfile) {
 		if (initParameters(rootProfile) == IDialogConstants.OK_ID
@@ -94,6 +107,7 @@ public class ExportProfileService {
 
 			final Shell activeShell = PlatformUI.getWorkbench().getDisplay()
 					.getActiveShell();
+			// Create a new plug-in project in the work space
 			NewPluginProject newPluginProject = new NewPluginProject();
 			final IProject profilePlugin = newPluginProject
 					.createPluginProject(
@@ -103,7 +117,7 @@ public class ExportProfileService {
 					new ArrayList<String>(Arrays.asList("org.eclipse.ui", "org.eclipse.core.runtime")),
 					new NullProgressMonitor(), activeShell);
 
-			// the following code is OK.
+			// Create a model folder.
 			final IFolder modelFolder = profilePlugin.getFolder("model");
 			try {
 				modelFolder.create(false, true, null);
@@ -113,7 +127,8 @@ public class ExportProfileService {
 								+ ") not handled", e);
 			}
 
-			// make a copy of the profile into the new plug-in used for the creation of static profile
+			// Make a copy of the profile into the new plug-in used for the
+			// creation of static profile
 			final IFile profileCopyIFile = modelFolder.getFile(profileName
 					+ "." + UMLResource.FILE_EXTENSION);
 
@@ -134,28 +149,29 @@ public class ExportProfileService {
 			final Profile profileCopy = (Profile) GenericUMLProfileTools
 					.load(profileCopyResource.getURI());
 
+			// Apply the stereotype EPackage to the copied profile and fill out
+			// the tagged value.
 			initEPackageStereotype(profileCopy);
 
+			// Create an ecore for the profile from its uml model.
 			final UmlToEcore umlToEcore = new UmlToEcore();
 			final Resource profileEcoreResource = umlToEcore
 					.umlToEcore(profileCopy);
 
+			// Create a genmodel for the profile from its ecore.
 			final EcoreToGenmodel ecoreToGenmodel = new EcoreToGenmodel();
 			final GenModel genModel = ecoreToGenmodel
 					.ecoreToGenmodel(profileEcoreResource);
 
+			// Generate a code model for the emf plug-in project of the profile
+			// to export.
 			final GenerateModelCode generateModelCode = new GenerateModelCode();
 			generateModelCode.generateModelCode(genModel);
 
+			// Add to the plug-in the extensions for the profile.
 			addProfileExtensions(profilePlugin, modelFolder, profileCopy);
 
-			// the following code is OK.
-			// IFolder targetBuild = profilePlugin.getFolder("targetBuild");
-			// try {
-			// targetBuild.create(false, true, null);
-			// } catch (CoreException e) {
-			// e.printStackTrace();
-			// }
+			// Build the project of the profile.
 			try {
 				profilePlugin.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
 			} catch (final CoreException e) {
@@ -163,6 +179,18 @@ public class ExportProfileService {
 						"exportProfile(" + rootProfile.getClass()
 								+ ") not handled", e);
 			}
+
+			// Refresh the workspace before the export.
+			try {
+				profilePlugin.refreshLocal(IResource.DEPTH_INFINITE,
+						new NullProgressMonitor());
+			} catch (CoreException e) {
+				new LogServices().error(
+						"exportProfile(" + rootProfile.getClass()
+								+ ") not handled", e);
+			}
+
+			// Export the plug-in as a deployable plug-in.
 			final IWorkbenchWizard wizard = new PluginExportWizard();
 
 			final StructuredSelection selection = new StructuredSelection(
@@ -267,7 +295,7 @@ public class ExportProfileService {
 	}
 
 	/**
-	 * Add to the plug-in the extension for the profile.
+	 * Add to the plug-in the extensions for the profile.
 	 * 
 	 * @param profilePlugin
 	 *            the plug-in
