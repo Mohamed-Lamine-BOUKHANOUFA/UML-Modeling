@@ -37,6 +37,7 @@ import org.eclipse.uml2.uml.Property;
 import org.eclipse.uml2.uml.Stereotype;
 import org.eclipse.uml2.uml.Type;
 import org.eclipse.uml2.uml.UMLFactory;
+import org.obeonetwork.dsl.uml2.design.services.UMLDesignerProfileVersion;
 import org.obeonetwork.dsl.uml2.profile.design.dialogs.ExtraAssociationSelectionDialog;
 import org.obeonetwork.dsl.uml2.profile.design.dialogs.ProfileVersionDialog;
 

@@ -32,8 +32,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.uml2.uml.Profile;
 import org.obeonetwork.dsl.uml2.design.services.LogServices;
-import org.obeonetwork.dsl.uml2.profile.design.services.UMLDesignerProfileVersion;
-import org.obeonetwork.dsl.uml2.profile.design.services.Version;
+import org.obeonetwork.dsl.uml2.design.services.UMLDesignerProfileVersion;
+import org.obeonetwork.dsl.uml2.design.services.Version;
 
 /**
  * A dialog message for the versioning information of a profile.

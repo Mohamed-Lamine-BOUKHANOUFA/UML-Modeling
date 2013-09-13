@@ -8,7 +8,7 @@
  * Contributors:
  *     Obeo - initial API and implementation
  *******************************************************************************/
-package org.obeonetwork.dsl.uml2.profile.design.services;
+package org.obeonetwork.dsl.uml2.design.services;
 
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
@@ -161,6 +161,69 @@ public class Version {
 	@Override
 	public String toString() {
 		return major + SEPARATOR + minor + SEPARATOR + micro;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		boolean result = false;
+		if (obj instanceof Version) {
+			Version objVersion = (Version) obj;
+			if (this.major == objVersion.major
+					&& this.minor == objVersion.minor
+					&& this.micro == objVersion.micro) {
+				result = true;
+			} else {
+				result = false;
+			}
+
+		} else {
+			result = super.equals(obj);
+		}
+		return result;
+	}
+
+	public boolean lessThan(Object obj) {
+		boolean result = false;
+		if (obj instanceof Version) {
+			Version objVersion = (Version) obj;
+			if (this.major < objVersion.major) {
+				result = true;
+			} else if (this.major == objVersion.major
+					&& this.minor < objVersion.minor) {
+				result = true;
+			} else if (this.major == objVersion.major
+					&& this.minor == objVersion.minor
+					&& this.micro < objVersion.micro) {
+				result = true;
+			} else {
+				result = false;
+			}
+		} else {
+			result = super.equals(obj);
+		}
+		return result;
+	}
+
+	public boolean greaterThan(Object obj) {
+		boolean result = false;
+		if (obj instanceof Version) {
+			Version objVersion = (Version) obj;
+			if (this.major > objVersion.major) {
+				result = true;
+			} else if (this.major == objVersion.major
+					&& this.minor > objVersion.minor) {
+				result = true;
+			} else if (this.major == objVersion.major
+					&& this.minor == objVersion.minor
+					&& this.micro > objVersion.micro) {
+				result = true;
+			} else {
+				result = false;
+			}
+		} else {
+			result = super.equals(obj);
+		}
+		return result;
 	}
 
 }
