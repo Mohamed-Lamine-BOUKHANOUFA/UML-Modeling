@@ -12,12 +12,12 @@ Contributors:
 <feature
       id="org.obeonetwork.dsl.feature.uml2"
       label="UML Designer (based on Obeo Designer)"
-      version="2.4.0.qualifier"
+      version="3.0.0.qualifier"
       provider-name="Obeo">
 
    <description url="http://docs.obeonetwork.com/uml">
       This modeler provides a set of common diagrams to work with
-UML 2.4 models.
+UML 3.0 models.
    </description>
 
    <copyright url="http://www.obeo.fr/legal.php?lang=en">
@@ -228,17 +228,18 @@ litigation.
    </license>
 
    <requires>
-      <import feature="fr.obeo.dsl.feature.designer.architect" version="6.0.0" match="greaterOrEqual"/>
-      <import feature="fr.obeo.dsl.viewpoint.runtime" version="6.4.0" match="greaterOrEqual"/>
+      <import feature="fr.obeo.dsl.feature.designer.architect" version="6.2.1" match="greaterOrEqual"/>
+      <import feature="fr.obeo.dsl.viewpoint.runtime" version="6.8.1" match="greaterOrEqual"/>
       <import feature="org.eclipse.uml2"/>
-      <import feature="fr.obeo.dsl.viewpoint.runtime.acceleo2" version="6.4.0" match="greaterOrEqual"/>
-      <import feature="fr.obeo.dsl.viewpoint.runtime.ocl" version="6.4.0" match="greaterOrEqual"/>
-      <import feature="fr.obeo.dsl.viewpoint.runtime.acceleo" version="6.4.0" match="greaterOrEqual"/>
-      <import feature="fr.obeo.dsl.viewpoint.runtime.ide.ui" version="6.4.0" match="greaterOrEqual"/>
-      <import feature="fr.obeo.dsl.viewpoint.runtime.ide.ui.acceleo" version="6.4.0" match="greaterOrEqual"/>
-      <import feature="fr.obeo.dsl.viewpoint.specifier.ide.ui" version="6.4.0" match="greaterOrEqual"/>
-      <import feature="fr.obeo.dsl.viewpoint.specifier.ide.ui.acceleo" version="6.4.0" match="greaterOrEqual"/>
-      <import feature="fr.obeo.dsl.viewpoint.runtime.ide.eef" version="6.4.0" match="greaterOrEqual"/>
+      <import feature="fr.obeo.dsl.viewpoint.runtime.acceleo2" version="6.8.1" match="greaterOrEqual"/>
+      <import feature="fr.obeo.dsl.viewpoint.runtime.ocl" version="6.8.1" match="greaterOrEqual"/>
+      <import feature="fr.obeo.dsl.viewpoint.runtime.acceleo" version="6.8.1" match="greaterOrEqual"/>
+      <import feature="fr.obeo.dsl.viewpoint.runtime.ide.ui" version="6.8.1" match="greaterOrEqual"/>
+      <import feature="fr.obeo.dsl.viewpoint.runtime.ide.ui.acceleo" version="6.8.1" match="greaterOrEqual"/>
+      <import feature="fr.obeo.dsl.viewpoint.specifier.ide.ui" version="6.8.1" match="greaterOrEqual"/>
+      <import feature="fr.obeo.dsl.viewpoint.specifier.ide.ui.acceleo" version="6.8.1" match="greaterOrEqual"/>
+      <import feature="fr.obeo.dsl.viewpoint.runtime.ide.eef" version="6.8.1" match="greaterOrEqual"/>
+      <import feature="org.eclipse.gmf.runtime.notation.feature.patch" version="0.0.0" match="greaterOrEqual"/>
    </requires>
 
    <plugin
@@ -281,5 +282,7 @@ litigation.
          install-size="0"
          version="0.0.0"
          unpack="false"/>
+
+
 
 </feature>
