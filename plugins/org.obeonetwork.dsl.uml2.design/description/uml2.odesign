@@ -5859,6 +5859,15 @@
               </firstModelOperations>
             </initialOperation>
           </ownedTools>
+          <ownedTools xsi:type="tool:ToolDescription" name="PD_ProfielToDSL" label="Profile To DSL" precondition="[self.oclIsTypeOf(uml::Profile)/]">
+            <element name="element"/>
+            <elementView name="elementView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool:ChangeContext" browseExpression="var:element">
+                <subModelOperations xsi:type="tool:ChangeContext" browseExpression="service:profileToDSL"/>
+              </firstModelOperations>
+            </initialOperation>
+          </ownedTools>
           <ownedTools xsi:type="tool_1:ContainerDropDescription" name="Drop From Model PD" precondition="service:newContainer.isValidElementForContainerView(element,newViewContainer)" forceRefresh="true" mappings="//@ownedViewpoints[name='Extend']/@ownedRepresentations[name='Profile%20Diagram']/@defaultLayer/@containerMappings[name='PD_Profile'] //@ownedViewpoints[name='Extend']/@ownedRepresentations[name='Profile%20Diagram']/@defaultLayer/@containerMappings[name='PD_Package'] //@ownedViewpoints[name='Extend']/@ownedRepresentations[name='Profile%20Diagram']/@defaultLayer/@containerMappings[name='PD_Stereotype']" dragSource="PROJECT_EXPLORER">
             <oldContainer name="oldSemanticContainer"/>
             <newContainer name="newSemanticContainer"/>
@@ -5897,6 +5906,7 @@
     <ownedJavaExtensions qualifiedClassName="org.obeonetwork.dsl.uml2.profile.design.services.UIServicesForProfile"/>
     <ownedJavaExtensions qualifiedClassName="org.obeonetwork.dsl.uml2.profile.design.exportprofile.ExportProfileService"/>
     <ownedJavaExtensions qualifiedClassName="org.obeonetwork.dsl.uml2.profile.design.services.ProfileServices"/>
+    <ownedJavaExtensions qualifiedClassName="org.obeonetwork.dsl.uml2.profile.design.profiletodsl.ProfileToDSLService"/>
   </ownedViewpoints>
   <ownedViewpoints endUserDocumentation="To guide the user to get started and get an overview of which representations are available." name="Dashboard" label="Dashboard" modelFileExtension="uml">
     <ownedRepresentations xsi:type="description_1:DiagramDescription" name="Dashboard" titleExpression="Dashboard" initialisation="true" showOnStartup="true" domainClass="uml.Model" preconditionExpression="service:doesDashboardNotExist">

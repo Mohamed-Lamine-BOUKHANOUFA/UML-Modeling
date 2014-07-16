@@ -240,39 +240,30 @@ public class ExportProfileService {
 	 *            the given profile
 	 * @return true if the model root is a profile else false
 	 */
-	public boolean isProfileRoot(final Profile rootProfile) {
+	public static boolean isProfileRoot(final Profile rootProfile) {
 		EObject rootContainer = EcoreUtil.getRootContainer(rootProfile);
 		if (rootContainer != null && rootContainer instanceof Profile) {
 			return true;
 		}
 		return false;
 	}
+	
 	/**
 	 * Create a new plug-in project with progress bar. see
-	 * {@link createPluginProject}
+	 * {@link org.obeonetwork.dsl.uml2.profile.design.exportprofile.createPluginProject}
 	 * 
 	 * @param pluginName
 	 * @return
 	 */
 	public IProject createPluginProjectWithProgress(final String pluginName) {
-		final Shell shell = PlatformUI.getWorkbench()
-				.getActiveWorkbenchWindow().getShell();
-		final NewPluginProject newPluginProject = new NewPluginProject();
+		final Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 		final IProject[] profilePlugin = new IProject[1];
 
 		IRunnableWithProgress validationRunnable = new IRunnableWithProgress() {
 			public void run(final IProgressMonitor progressMonitor)
 					throws InvocationTargetException, InterruptedException {
 				try {
-					profilePlugin[0] = newPluginProject.createPluginProject(
-							pluginName,
-							new ArrayList<String>(Arrays.asList("src")),
-							new ArrayList<IProject>(),
-							new HashSet<String>(),
-							new ArrayList<String>(Arrays.asList(
-									"org.eclipse.ui",
-									"org.eclipse.core.runtime")),
-							new NullProgressMonitor(), shell);
+					profilePlugin[0] = createPluginProject(pluginName, shell);
 
 				} finally {
 					progressMonitor.done();
@@ -281,11 +272,30 @@ public class ExportProfileService {
 		};
 
 		try {
-			new ProgressMonitorDialog(shell)
-					.run(true, true, validationRunnable);
+			new ProgressMonitorDialog(shell).run(true, true, validationRunnable);
 		} catch (Exception exception) {
 			EMFEditUIPlugin.INSTANCE.log(exception);
 		}
+
+		return profilePlugin[0];
+	}
+
+	/**
+	 * Create a new plug-in project. see
+	 * {@link org.obeonetwork.dsl.uml2.profile.design.exportprofile.createPluginProject}
+	 * 
+	 * @param pluginName
+	 * @return
+	 */
+	static public IProject createPluginProject(final String pluginName, Shell shell) {
+		final NewPluginProject newPluginProject = new NewPluginProject();
+		final IProject[] profilePlugin = new IProject[1];
+
+		profilePlugin[0] = newPluginProject.createPluginProject(pluginName,
+				new ArrayList<String>(Arrays.asList("src")), new ArrayList<IProject>(),
+				new HashSet<String>(),
+				new ArrayList<String>(Arrays.asList("org.eclipse.ui", "org.eclipse.core.runtime")),
+				new NullProgressMonitor(), shell);
 
 		return profilePlugin[0];
 	}
@@ -298,7 +308,7 @@ public class ExportProfileService {
 	 * @return true if no error or warning in the EObject otherwise return
 	 *         false.
 	 */
-	public boolean validateUmlElementWithProgress(final Profile element) {
+	public static boolean validateUmlElementWithProgress(final Profile element) {
 		ValidateUMLElement umlValidator = new ValidateUMLElement();
 		umlValidator.validateUMLmodel(element);
 		return umlValidator.getDiagnisticResult();

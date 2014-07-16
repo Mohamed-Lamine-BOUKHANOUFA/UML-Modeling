@@ -47,7 +47,10 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.emf.transaction,
  org.apache.xml.serializer,
  org.eclipse.emf.edit.ui,
- org.eclipse.uml2.uml.editor
+ org.eclipse.uml2.uml.editor,
+ org.eclipse.emf.ecore,
+ org.eclipse.jface,
+ org.eclipse.swt
 Bundle-ActivationPolicy: lazy
 Export-Package: org.obeonetwork.dsl.uml2.design,
  org.obeonetwork.dsl.uml2.design.services,
