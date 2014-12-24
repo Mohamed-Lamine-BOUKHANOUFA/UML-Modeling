@@ -14,7 +14,7 @@ Alfred uses SysML to describe its system.
 
 h1. Manage SysML/UML projects
 
-To start, Alfred has to create a new SysML project.
+To start, Alfred has to create a new SysML project with "SysML Designer":{{ page.relativePath }}/ref-doc/presentation.html#SysML_Designer.
 As SysML Designer is based on UML Designer, a SysML project is also a _UML project_.
 
 John also uses UML to describe its application. In UML Designer, a UML project is a _Modeling project_ used to organize and manage the models and their representations (diagrams, tables, etc.). 
@@ -166,6 +166,11 @@ The outline view has two display modes that the user can select in its upper too
 
 h2. Properties view
 
+The generic way to edit element values is using the *properties view*. If it is not opened yet
+you can open it clicking on the *Window* menu, then *Show View*  and then *Properties*
+
+!{{ page.relativePath }}/images/using_class_diagram/properties.png!
+
 In the properties view, the user finds several tabs which will not be the same if an element is selected on the diagram or not. 
 If an element is selected on the diagram, he has on the properties view the following generic tabs:
 * General : contains a set of the most used properties;
@@ -173,6 +178,7 @@ If an element is selected on the diagram, he has on the properties view the foll
 * Relationships : shows the relations of the selected element;
 * Documentation : shows the comment associated to the UML element;
 * Semantic : This tab shows the properties of the semantic element selected. You will find the same informations as in the properties view of an Ecore editor.
+!{{ page.relativePath }}/images/using_class_diagram/properties_values.png!
 * Style : This tab presents the properties about the graphical representation of the element. You will find informations like label size and format, shape of the graphical object, background and foreground colors...
 * Appearance : This tab allows to choose the style and size of text fields contained by the element.
 
@@ -185,7 +191,7 @@ If the user does not select an element, he has in the properties view the proper
 * Rulers & Grid : Allow the user to display vertical and horizontal rulers and also a grid on the diagram. He can choose how is displayed the grid (Solid style, Dash style, Dot style...).
 * Appearance : This tab allows to choose the style and size of text fields of every elements of diagram which have not been specifically set on the Representation Diagram.
 
-h2. Create a project
+h2(#Create_A_Project). Create a project
 
 Alfred starts by creating a new SysML project. From the _Modeling_ perspective, he creates a new SysML project through the Eclipse main menus (File->New->SysML Project) or from the toolbar (New->SysML Project).
 
@@ -216,26 +222,28 @@ The viewpoints are defined according to the representation separation defined by
 * structural diagrams
 * behavioural diagrams
 
-The _UML Structural Modeling_ viewpoint is used by the users who are focused on system structures. For users interested in the modelization of behaviours, they have to activate the _UML Behavioural Modeling_ viewpoints. These two viewpoints contain only standard UML representations.
+The _Capture_ viewpoint is used by the users who are focused on system structures. For users interested in the modelization of behaviours, they have to activate the _Design_ viewpoints. These two viewpoints contain only standard UML representations.
 A third viewpoint is defined to contain non standard representations.
 
-Each UML project provides three viewpoints :
-* UML Structural Modeling : enables all the structural diagrams
-** Class diagram
+Each UML project provides five viewpoints :
+* Dashboard : To guide the user to get started and get an overview of which representations are available.
+* Capture : To capture the actors and their interactions with the application and define the main structure of the application.
 ** Package hierarchy
+** Use case diagram
+* Design : To work on the fine grained structure and the behaviours of the application.
+** Class diagram
 ** Component diagram
 ** Composite structure diagram
 ** Deployment diagram
-** Object diagram
-* UML Behavioural Modeling : enables all the behavioral diagrams
-** Use case diagram
 ** Sequence diagram
 ** Statemachine diagram
 ** Activity diagram
-* UML Extensions : enables non standard representations
+* Review : To document, get some overview and metrics of the application (non standard representations).
 ** Documentation table
 ** Package containment
 ** UseCase/Element matrix
+* Extend : To extend the UML standard for example by defining profile.
+** Profile diagram
 				
 This controls what kind of representations can be created on the semantic models inside the project. The set of viewpoints which are available to the user depends on what plug-ins are installed, and on the type of semantic models which are inside the modeling projects. For example, even if the user has installed the UML Designer, he will only be able to enable to corresponding viewpoints if the project contains UML models (.uml files).
 To select which viewpoints are enable on a project, he simply uses the Viewpoint Selection action in the context menu of the project itself. A dialog box opens which shows all the viewpoints which are compatible with the project (depending on the kind of models it contains). The user can check or un-check each viewpoint individually to enable or disable it, and clicks OK to validate his choice.
@@ -245,6 +253,29 @@ Another viewpoint is created to contain all the SysML specific representations.
 Each SysML project provides the following viewpoints :
 * SysML : provides all the SysML diagrams
 * UML Designer viewpoints
+
+h1(#Dashboard). Dashboard
+
+The *dashboard* is a diagram which is created automatically by the "project creation":{{ page.relativePath }}/ref-doc/define-the-system.html#Create_A_Project action. Only one dashboard exists per project.
+
+!{{ page.relativePath }}/images/Dashboard.png!
+
+The dashboard is composed by three main regions : Create, Navigate, Help
+
+h2. Create
+
+The *Create* section lists all the representations that could be created ordered by viewpoints : Capture (Package hierarchy, Use case diagram...), Design (Class diagram, Activity diagram,...).
+To *create a new representation* the user just needs to *double click* on the representation name. The new representation is created under the root model element in the semantic model and the corresponding editor opens.
+
+h2. Navigate
+
+The *Navigate* section lists all the existing representations.
+To *navigate* to a representation the user just needs to *double click* on the representation name. The representation editor is opened.
+
+h2. Help
+
+The *Help* section lists some documentation entry points.
+To *open the help*, the user just needs to *double click* on the help section title. The contextual help content is opened on the expected section.
 
 h1. Manage representations
 
@@ -279,6 +310,9 @@ Example : When a _Class_ is selected in a diagram or the model explorer, it is p
 * a Composite structure diagram
 * an Activity diagram
 * a Statemachine diagram
+
+For example on a package in the package diagram, to create a class diagram you should *right-click* on your model or on a package and pick @navigate@ and then @new Class Diagram@.
+!{{ page.relativePath }}/images/using_package_hierarchy/create_classdiag.png!
 				
 Note that the set of diagrams the user can create will depend both on the type of the selected element and on the set of viewpoints which are currently enabled.
 
@@ -295,14 +329,14 @@ A UML project can contain multiple UML models.
 
 The user can :
 * *Create a new UML model* from the Eclipse menus (File->New->UML model) or from the toolbar (New->UML model).
-* *Delete a UML model* : From the Model Explorer view rigth-clicks on the UML file to remove and select Delete. 
+* *Delete a UML model* : From the Model Explorer view right-clicks on the UML file to remove and select Delete. 
 * Manage referenced models :
 ** *Reference an existing UML model* from the Project Dependencies in the Model Explorer view. A modeling project has always an element called Project Dependencies available. This is used to import external models, which are stored outside of the modeling project but used in it. To use a semantic model stored outside of the current modeling project, it must be added to the project dependencies. That does not change its location but simply allows access to its content. To add an external model to a modeling project, right-click on Project Dependencies then select Add Model. A wizard page opens, allowing the user to enter the URI of the model to add. If the model is in the workspace, the Browse Workspace button can be used to look for it. If the model is in the file system, the Browse File System button must be used to find it. Otherwise, the user must enter the model’s URI manually. Project dependencies can contain both semantic models and graphical models ( i.e. representations files).
 ** *Remove a referenced model* : Referenced models can be removed if they are not used, just right-click on the model in the Model Dependencies and select Remove. This action does not delete the model itself but only the reference to it.
 
 h1. Define the requirements
 
-The first step for Alfred is to capture all the requirements for the system do defined. The SysML standard provides a new kind of diagram : the *requirement diagram*.
+The first step for Alfred is to capture all the requirements for the system do defined. The SysML standard provides a new kind of diagram : the *requirement diagram*. This diagram is available in "SysML Designer":{{ page.relativePath }}/ref-doc/presentation.html#SysML_Designer.
 This diagram is used to capture functional, performance, and interface requirements.
 !{{ page.relativePath }}/images/RequirementDiagram.png!
 				
@@ -397,7 +431,7 @@ In the requirement diagram, it is possible to edit the elements labels  (see "Di
 h1. Define the system structure
 
 At this step, Alfred knows who will use its application and what they should be able to do with it. It is time to define the blocks and their relationships to describe the system structure.
-Alfred defines the big structure of the system thanks to the *Block Definition diagram*.
+Alfred defines the big structure of the system thanks to the *Block Definition diagram*.  This diagram is available in "SysML Designer":{{ page.relativePath }}/ref-doc/presentation.html#SysML_Designer.
 !{{ page.relativePath }}/images/BlockDefinitionDiagram.png!
 				
 
@@ -526,7 +560,7 @@ In the block definition diagram, it is possible to edit the elements labels("Dia
 
 h1. Define the internal system structure
 
-Next step for Alfred is to detail the internal structure of its system. He uses the *Internal Block Definition diagram* for this.
+Next step for Alfred is to detail the internal structure of its system. He uses the *Internal Block Definition diagram* for this.  This diagram is available in "SysML Designer":{{ page.relativePath }}/ref-doc/presentation.html#SysML_Designer.
 !{{ page.relativePath }}/images/InternalBlockDefinitionDiagram.png!
 				
 
@@ -594,7 +628,7 @@ In the internal block definition diagram, it is possible to edit the elements la
 
 h1. Capture performance and quantitative constraints
 
-Final step for Alfred, he has to precisely define performance and quantitative constraints for its system. The standard way for this is to use the *Parametric diagram*. Parametric diagrams show mathematical relationships among the system blocks. They are created using constraint blocks that define mathematical formulas.
+Final step for Alfred, he has to precisely define performance and quantitative constraints for its system. The standard way for this is to use the *Parametric diagram*.  This diagram is available in "SysML Designer":{{ page.relativePath }}/ref-doc/presentation.html#SysML_Designer. Parametric diagrams show mathematical relationships among the system blocks. They are created using constraint blocks that define mathematical formulas.
 !{{ page.relativePath }}/images/ParametricDiagram.png!
 				
 
@@ -659,5 +693,5 @@ In the parametric diagram, it is possible to edit the elements labels  (see "Dia
 
 h1. Allocate the system
 
-SysML provides allocation tables that support requirements allocation, functional allocation and structural allocation.
+SysML provides allocation tables that support requirements allocation, functional allocation and structural allocation.  These representation are available in "SysML Designer":{{ page.relativePath }}/ref-doc/presentation.html#SysML_Designer.
 !{{ page.relativePath }}/images/RequirementAllocationTable.png!

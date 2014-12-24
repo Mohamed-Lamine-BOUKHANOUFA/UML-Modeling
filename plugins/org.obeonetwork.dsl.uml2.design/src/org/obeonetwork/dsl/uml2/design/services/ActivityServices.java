@@ -16,9 +16,6 @@ import java.util.List;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.sirius.business.api.session.Session;
-import org.eclipse.sirius.business.api.session.SessionManager;
 import org.eclipse.uml2.uml.AcceptEventAction;
 import org.eclipse.uml2.uml.Action;
 import org.eclipse.uml2.uml.Activity;
@@ -29,6 +26,7 @@ import org.eclipse.uml2.uml.ActivityPartition;
 import org.eclipse.uml2.uml.Behavior;
 import org.eclipse.uml2.uml.CallAction;
 import org.eclipse.uml2.uml.CallEvent;
+import org.eclipse.uml2.uml.CallOperationAction;
 import org.eclipse.uml2.uml.ControlFlow;
 import org.eclipse.uml2.uml.DecisionNode;
 import org.eclipse.uml2.uml.Element;
@@ -46,11 +44,16 @@ import org.eclipse.uml2.uml.ObjectFlow;
 import org.eclipse.uml2.uml.OpaqueAction;
 import org.eclipse.uml2.uml.Operation;
 import org.eclipse.uml2.uml.OutputPin;
+import org.eclipse.uml2.uml.Parameter;
+import org.eclipse.uml2.uml.ParameterDirectionKind;
+import org.eclipse.uml2.uml.Pin;
 import org.eclipse.uml2.uml.Signal;
 import org.eclipse.uml2.uml.SignalEvent;
 import org.eclipse.uml2.uml.TimeEvent;
 import org.eclipse.uml2.uml.Trigger;
+import org.eclipse.uml2.uml.Type;
 import org.eclipse.uml2.uml.UMLFactory;
+import org.obeonetwork.dsl.uml2.design.ui.wizards.newmodel.Messages;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
@@ -517,10 +520,9 @@ public class ActivityServices {
 			return false;
 		}
 
-		// A JoinNode/MergeNode/DecisionNode shall have exactly one outgoing ActivityEdge but may have
+		// A JoinNode/MergeNode shall have exactly one outgoing ActivityEdge but may have
 		// multiple incoming ActivityEdges.
-		if (preSource instanceof JoinNode || preSource instanceof MergeNode
-				|| preSource instanceof DecisionNode) {
+		if (preSource instanceof JoinNode || preSource instanceof MergeNode) {
 			List<ActivityEdge> outgoing = ((ActivityNode)preSource).getOutgoings();
 			if (outgoing != null && outgoing.size() == 1) {
 				return false;
@@ -588,21 +590,82 @@ public class ActivityServices {
 	 *            Semantic element
 	 * @return All the operations
 	 */
-	public List<EObject> getAllOperations(EObject eObj) {
+	public List<EObject> getAllOperations(Element element) {
 		List<EObject> operations = Lists.newArrayList();
-		final Session session = SessionManager.INSTANCE.getSession(eObj);
-		for (Resource resource : session.getSemanticResources()) {
-			final Predicate<EObject> predicate = new Predicate<EObject>() {
-				public boolean apply(EObject eObj) {
-					return eObj instanceof Operation
-							&& (((Operation)eObj).getMethods() == null || ((Operation)eObj).getMethods()
-									.size() == 0);
-				}
-			};
-			Iterators.addAll(operations, Iterators.filter(resource.getAllContents(), predicate));
+		UMLServices umlServices = new UMLServices();
+		List<org.eclipse.uml2.uml.Package> rootPkgs = umlServices.getAllAvailableRootPackages(element);
+		final Predicate<EObject> predicate = new Predicate<EObject>() {
+			public boolean apply(EObject eObj) {
+				return eObj instanceof Operation
+						&& (((Operation)eObj).getMethods() == null || ((Operation)eObj).getMethods().size() == 0);
+			}
+		};
+		for (org.eclipse.uml2.uml.Package pkg : rootPkgs) {
+			Iterators.addAll(operations, Iterators.filter(pkg.eAllContents(), predicate));
 		}
 
 		return operations;
+	}
+
+	/**
+	 * Get all the behaviors available in the semantic resources.
+	 * 
+	 * @param eObj
+	 *            Semantic element
+	 * @return All the behaviors
+	 */
+	public List<EObject> getAllBehaviors(Element element) {
+		List<EObject> behaviors = Lists.newArrayList();
+		UMLServices umlServices = new UMLServices();
+		List<org.eclipse.uml2.uml.Package> rootPkgs = umlServices.getAllAvailableRootPackages(element);
+		for (org.eclipse.uml2.uml.Package pkg : rootPkgs) {
+			Iterators.addAll(behaviors,
+					Iterators.filter(pkg.eAllContents(), Predicates.instanceOf(Behavior.class)));
+		}
+
+		return behaviors;
+	}
+
+	/**
+	 * Get all the operations available in the semantic resources.
+	 * 
+	 * @param eObj
+	 *            Semantic element
+	 * @return All the operations
+	 */
+	public List<EObject> getAllOperationsAndPackages(Element eObj) {
+		List<EObject> results = Lists.newArrayList();
+		List<EObject> operations = getAllOperations(eObj);
+		for (EObject eObject : operations) {
+			while (eObject.eContainer() != null) {
+				results.add(eObject.eContainer());
+				eObject = eObject.eContainer();
+			}
+		}
+		results.addAll(operations);
+
+		return results;
+	}
+
+	/**
+	 * Get all the operations available in the semantic resources.
+	 * 
+	 * @param element
+	 *            Semantic element
+	 * @return All the behaviors
+	 */
+	public List<EObject> getAllBehaviorsAndPackages(Element element) {
+		List<EObject> results = Lists.newArrayList();
+		List<EObject> behaviors = getAllBehaviors(element);
+		for (EObject eObject : behaviors) {
+			while (eObject.eContainer() != null) {
+				results.add(eObject.eContainer());
+				eObject = eObject.eContainer();
+			}
+		}
+		results.addAll(behaviors);
+
+		return results;
 	}
 
 	/**
@@ -612,14 +675,150 @@ public class ActivityServices {
 	 *            Semantic element
 	 * @return All the signals
 	 */
-	public List<EObject> getAllSignals(EObject eObj) {
+	public List<EObject> getAllSignals(Element element) {
 		List<EObject> signals = Lists.newArrayList();
-		final Session session = SessionManager.INSTANCE.getSession(eObj);
-		for (Resource resource : session.getSemanticResources()) {
+		UMLServices umlServices = new UMLServices();
+		List<org.eclipse.uml2.uml.Package> rootPkgs = umlServices.getAllAvailableRootPackages(element);
+		for (org.eclipse.uml2.uml.Package pkg : rootPkgs) {
 			Iterators.addAll(signals,
-					Iterators.filter(resource.getAllContents(), Predicates.instanceOf(Signal.class)));
+					Iterators.filter(pkg.eAllContents(), Predicates.instanceOf(Signal.class)));
 		}
 
 		return signals;
+	}
+
+	public List<Parameter> getInputParameters(Operation operation) {
+		return operation.inputParameters();
+	}
+
+	public List<Parameter> getOutputParameters(Operation operation) {
+		return operation.outputParameters();
+	}
+
+	public Pin createInputPinFromParameter(CallAction action, Parameter parameter) {
+		final InputPin pin = UMLFactory.eINSTANCE.createInputPin();
+		action.getArguments().add(pin);
+		setPinAttributes(parameter, pin);
+		return null;
+	}
+
+	public Pin createOutputPinFromParameter(CallAction action, Parameter parameter) {
+		final OutputPin pin = UMLFactory.eINSTANCE.createOutputPin();
+		action.getResults().add(pin);
+		setPinAttributes(parameter, pin);
+		return null;
+	}
+
+	private void setPinAttributes(Parameter parameter, final Pin pin) {
+		pin.setName(parameter.getName());
+		pin.setIsOrdered(parameter.isOrdered());
+		pin.setType(parameter.getType());
+		pin.setLowerValue(parameter.getLowerValue());
+		pin.setUpperValue(parameter.getUpperValue());
+	}
+
+	public boolean isConsistent(Pin pin) {
+		return !isNotConsistent(pin);
+	}
+
+	public boolean isConsistent(CallOperationAction callOperationAction) {
+		return !isNotConsistent(callOperationAction);
+	}
+
+	public boolean isNotConsistent(Pin pin) {
+		return getCallOperationPinConsistencyErrorMessage(pin).length() > 0;
+	}
+
+	public boolean isNotConsistent(CallOperationAction callOperationAction) {
+		return getCallOperationConsistencyErrorMessage(callOperationAction).length() > 0;
+	}
+
+	public String getCallOperationPinConsistencyErrorMessage(Pin pin) {
+		String message = "";
+		String pinName = pin.getName();
+		Type pinType = pin.getType();
+
+		EObject container = pin.eContainer();
+		if (container instanceof CallAction) {
+			CallAction callAction = (CallAction)container;
+			if (callAction instanceof CallOperationAction) {
+				CallOperationAction callOperationAction = (CallOperationAction)callAction;
+				Operation operation = callOperationAction.getOperation();
+				// Find parameter associated to the pin thanks to the name and type
+				final org.eclipse.uml2.uml.Parameter param = operation.getOwnedParameter(pinName, pinType);
+				if (param == null && !("target".equals(pinName))) {
+					// Can't find a param associated to the current pin we ignore the target pin
+					Object[] params = new Object[] {callAction.getQualifiedName(), pinName,
+							operation.getQualifiedName()};
+					message = Messages.bind(Messages.UmlValidationErrorOnCallOperationAction, params);
+				} else if (param != null) {
+					if (!param.getName().equals(pin.getName())) {
+						Object[] params = new Object[] {callAction.getQualifiedName(), pinName, "name"};
+						message = Messages.bind(Messages.UmlValidationErrorOnCallOperationActionPin, params);
+					} else if (!param.getType().equals(pin.getType())) {
+						Object[] params = new Object[] {callAction.getQualifiedName(), pinName, "type"};
+						message = Messages.bind(Messages.UmlValidationErrorOnCallOperationActionPin, params);
+					} else if (param.isOrdered() != pin.isOrdered()) {
+						Object[] params = new Object[] {callAction.getQualifiedName(), pinName, "ordered"};
+						message = Messages.bind(Messages.UmlValidationErrorOnCallOperationActionPin, params);
+					} else if ((param.getLowerValue() == null && pin.getLowerValue() != null)
+							|| (param.getLowerValue() != null && pin.getLowerValue() == null)
+							|| !((param.getLowerValue() == null && pin.getLowerValue() == null) || param
+									.getLowerValue().stringValue().equals(pin.getLowerValue().stringValue()))) {
+						Object[] params = new Object[] {callAction.getQualifiedName(), pinName, "lower value"};
+						message = Messages.bind(Messages.UmlValidationErrorOnCallOperationActionPin, params);
+					} else if ((param.getUpperValue() == null && pin.getUpperValue() != null)
+							|| (param.getUpperValue() != null && pin.getUpperValue() == null)
+							|| !((param.getUpperValue() == null && pin.getUpperValue() == null) || param
+									.getUpperValue().stringValue().equals(pin.getUpperValue().stringValue()))) {
+						Object[] params = new Object[] {callAction.getQualifiedName(), pinName, "upper value"};
+						message = Messages.bind(Messages.UmlValidationErrorOnCallOperationActionPin, params);
+					}
+				}
+			}
+		}
+		return message;
+	}
+
+	public String getCallOperationConsistencyErrorMessage(CallOperationAction callOperationAction) {
+		String message = "";
+		Operation operation = callOperationAction.getOperation();
+		for (Parameter param : operation.getOwnedParameters()) {
+			if (ParameterDirectionKind.IN_LITERAL.equals(param.getDirection())) {
+				Pin pin = callOperationAction.getArgument(param.getName(), param.getType());
+				if (pin == null) {
+					// Can't find a param associated to the current pin we ignore the target pin
+					Object[] params = new Object[] {callOperationAction.getQualifiedName(), param.getName(),
+							operation.getQualifiedName()};
+					message = Messages.bind(Messages.UmlValidationErrorOnCallOperationAction2, params);
+				}
+			} else if (ParameterDirectionKind.OUT_LITERAL.equals(param.getDirection())
+					|| ParameterDirectionKind.RETURN_LITERAL.equals(param.getDirection())) {
+				Pin pin = callOperationAction.getResult(param.getName(), param.getType());
+				if (pin == null) {
+					// Can't find a param associated to the current pin we ignore the target pin
+					Object[] params = new Object[] {callOperationAction.getQualifiedName(), param.getName(),
+							operation.getQualifiedName()};
+					message = Messages.bind(Messages.UmlValidationErrorOnCallOperationAction2, params);
+				}
+			} else {
+				Pin inputPin = callOperationAction.getArgument(param.getName(), param.getType());
+				if (inputPin == null) {
+					// Can't find a param associated to the current pin we ignore the target pin
+					Object[] params = new Object[] {callOperationAction.getQualifiedName(), param.getName(),
+							operation.getQualifiedName()};
+					message = Messages.bind(Messages.UmlValidationErrorOnCallOperationAction2, params);
+				}
+				Pin outputPin = callOperationAction.getResult(param.getName(), param.getType());
+				if (outputPin == null) {
+					// Can't find a param associated to the current pin we ignore the target pin
+					Object[] params = new Object[] {callOperationAction.getQualifiedName(), param.getName(),
+							operation.getQualifiedName()};
+					message = Messages.bind(Messages.UmlValidationErrorOnCallOperationAction2, params);
+				}
+			}
+		}
+
+		return message;
 	}
 }

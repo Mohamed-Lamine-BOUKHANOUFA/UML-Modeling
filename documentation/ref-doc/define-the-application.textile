@@ -10,7 +10,7 @@ What the application is supposed to be?
 and
 What the application is supposed to do?
 
-h1. What the application is supposed to be ?
+h1(#Activity_Diagram). What the application is supposed to be ?
 
 First, John tries to get a feel for the bigger picture of its application. The purpose is to get an overall understanding of the system. He wants to catch the business process and checks if there is a precedent for this application.
 To do so UML propose a very useful diagram : the *activity diagram*.
@@ -81,14 +81,13 @@ This actions allows to edit :
 
 h1. What the application is supposed to do ? 
 
-h2. Capture the use cases
+h2(#Use_Case_Diagram). Capture the use cases
 
 The next step for John is to capture the different requirements. He knows what he wants, what the other stakeholders want and so he needs to document this. He has already started catching the requirements on post-it notes and pieces of paper during meetings, he has also used his whiteboard for some sketching.
 When he recovered all his requirements, he starts to sort them by subject in order to see who is going to use the application. He needs now to capture the different users of the system. John creates a UML *Use Case diagram* to specify the different subjects and the roles played by users and other systems that interact.
 The use case diagram is used to describe the interaction of the user and other applications with the specified system.
 !{{ page.relativePath }}/images/UseCaseDiagram.png!
 					
-
 The use case diagram is an unsynchronized diagram which means that the user has to add existing elements manually on the diagram to see them.
 
 h3. Manage use cases
@@ -112,6 +111,9 @@ A subject could be a :
 * Artifact
 * DataType
 * Interface
+
+The *Use Case Diagram* will display any @UseCase@ not being affected to a subject on the canvas. If a subject is affected, then the use case
+will be displayed directly within this subject.
 
 The user can also *delete an element* (see "Diagram editor/Editor tab-bar/Delete element/from model":{{ page.relativePath }}/ref-doc/define-the-system.html#Delete_element_from_model).
 
@@ -140,9 +142,10 @@ As the diagram is unsynchronized, the user needs to add manually the elements al
 It is possible to *add existing elements* in the use case diagram by :
 * selecting the add tool from the palette or the tooltip and then clicking on the diagram or an element. The add tool opens a selection wizard.
 * drag and droping an element from the model explorer. 
-						
 
-The following elements can be added on a component diagram :
+Dragging a use case from a subject to the canvas (and the other way around) will set or unset the subject accordingly.
+
+The following elements can be added on a use case diagram :
 						
 |_. Element |_. Representation |
 |Use case |!{{ page.relativePath }}/images/UseCaseDiagramUseCase.png!|
@@ -172,17 +175,18 @@ In the use case diagram, it is possible to edit the elements labels  (see "Diagr
 * actor, collaboration, subject, use case labels
 * relationships labels
 
-h2. Define the package system structure
+h3(#Use_Case_Cross_Table). Use case cross table
+
+Another representation allows the user to see which use cases are associated to which elements in the model. The *use case cross table* represents on lines all the model elements and in the columns the existing use cases. To associate a use case to an element just check the corresponding cell.
+
+h2(#Package_Diagram). Define the package system structure
 
 At this step, John knows who will use its application and what they are able todo with it. It is time to define the components, the interfaces and the relationships that would be seen and experienced by the application user. The purpose is to detail the available objects in the user's universe and how they can use them to accomplish certain tasks.
-John defines the big structure of the system thanks to the *Package diagram*.
+John defines the big structure of the system thanks to the *package diagram*.
 The package diagram is used to describe the structure of the system by showing the packages and their dependencies.
 !{{ page.relativePath }}/images/PackageDiagram.png!
 	
 The package diagram is an unsynchronized diagram which means that the user has to add existing elements manually on the diagram to see them.
-The package diagram is used to describe the structure of the system by showing the packages and their dependencies.
-!{{ page.relativePath }}/images/PackageDiagram.png!
-	
 
 h3. Manage packages
 
@@ -246,7 +250,7 @@ In the package diagram, it is possible to edit the elements labels  (see "Diagra
 * package labels
 * relationships labels
 
-h2. Define the components
+h2(#Component_Diagram). Define the components
 
 It is the moment for John to split the system in multiple components and to describe how all these elements are linked together in a *component diagram*.
 	The component diagram is used to describe the structure of the system by showing the components and their connectors.
@@ -274,10 +278,20 @@ Creation tools are available in the component diagram for the following types :
 |Port on a class|!{{ page.relativePath }}/images/CompositeStructureDiagramPort.png!|Define the interaction between a class and its environment|
 |Interface |!{{ page.relativePath }}/images/ComponentDiagramInterface.png!|A contract that implementers agree to meet|
 
-The user can also *delete an element* (see "Diagram editor/Editor tab-bar/Delete element/from model":{{ page.relativePath }}/ref-doc/define-the-system.html#Delete_element_from_model.
-	}
+A class can be used as a component :
+!{{ page.relativePath }}/images/features/component_pics/class_as_component.jpg!
+or in a component :
+!{{ page.relativePath }}/images/features/component_pics/implementation_classes_in_component.jpg!
 
-h3. Manage relationships
+Required and Provided Interfaces can be defined:
+* using ports :
+!{{ page.relativePath }}/images/features/component_pics/exchange_through_ports.jpg!
+* or directly on the components :
+!{{ page.relativePath }}/images/features/component_pics/exchange_through_component.jpg!
+
+The user can also *delete an element* (see "Diagram editor/Editor tab-bar/Delete element/from model":{{ page.relativePath }}/ref-doc/define-the-system.html#Delete_element_from_model.
+
+h3(#Manage_relationships). Manage relationships
 
 It is possible to *create a relationship* by selecting the edge creation tool from the palette and then clicking on a source element and a target element.
 The following edge creation tools exist in the palette :
@@ -290,6 +304,16 @@ The following edge creation tools exist in the palette :
 |Interface Realization |!{{ page.relativePath }}/images/ComponentDiagramInterfaceRealization.png!|Component realizes interface|
 |Redefined |!{{ page.relativePath }}/images/ComponentDiagramRedefined.png!|Source port redefined target port|
 |Connector |Represented by a solid link between two ports|Source port is connected to target port|
+
+You can link two ports using assembly or delegation connectors.
+
+Assembly Connector :
+
+!{{ page.relativePath }}/images/features/component_pics/assembly_connector.jpg!
+
+Delegation Connector :
+
+!{{ page.relativePath }}/images/features/component_pics/delegation_connector.jpg!
 
 The user can also *delete a relationship* (see "Diagram editor/Editor tab-bar/Delete element/from model":{{ page.relativePath }}/ref-doc/define-the-system.html#Delete_element_from_model).
 
@@ -340,15 +364,14 @@ This actions allows to edit :
 h2. Define the information flow 
 
 By creating links between the components, John defines the flow followed by the data in the system.
-To get details on how to manage the information flows,
-	@see "What the application is supposed to be ?" _Define components -> Manage relationships_.
+To get details on how to manage the information flows (see "What the application is supposed to be?/Define components/Manage relationships":{{ page.relativePath }}/ref-doc/define-the-application.html#Manage_relationships).
 	
 h2. Diagram the organization of the information
 
 He provides a detailed organization of the information by creating a new kind of activity diagram. This diagram shows how the information goes through the different components of the system. Previously in the process, John used an activity diagram to describe the global business process of the specified application, here the activity diagram is used again but for providing low level information.
 To get details on activity diagram,"What the application is supposed to be ?":{{ page.relativePath }}/define-the-application.html.
 
-h2. Define the system interfaces
+h2(#Composite_Structure_Diagram). Define the system interfaces
 
 Then for each component, John details the internal structure of a component thanks to *Composite structure diagrams*.
 
@@ -357,7 +380,7 @@ The composite structure diagram is used to describe the structure of the system 
 !{{ page.relativePath }}/images/CompositeStructureDiagram.png!
 	
 
-The component diagram is an unsynchronized diagram which means that the user has to add existing elements manually on the diagram to see them.
+The composite structure diagram is an unsynchronized diagram which means that the user has to add existing elements manually on the diagram to see them.
 
 h3. Manage nodes
 
@@ -370,8 +393,6 @@ If the user selects a container, the element will be created under the correspon
 Tooltip tools are also available to create any kind of elements.
 
 Creation tools are available in the composite structure diagram for the following types :
-
-		
 		
 |_. Element     |_. Representation |_. Comments|
 |Component|!{{ page.relativePath }}/images/ComponentDiagramComponent.png!|A modular part of a system|
@@ -462,9 +483,9 @@ In the composite structure diagram, it is possible to edit the elements labels  
 * component, class, interface, port labels
 * relationships labels
 
-h2. Define the system environment
+h2(#Deployment_Diagram). Define the system environment
 
-Then, John defines the system environment thanks to a *Deployment diagram*, and how the software is deployed on the infrastructure. This diagram describes the current technological limitations and constraints.
+Then, John defines the system environment thanks to a *deployment diagram*, and how the software is deployed on the infrastructure. This diagram describes the current technological limitations and constraints.
 
 The deployment diagram is used to describe the structure of the system by showing the physical deployment of artifacts on nodes.
 !{{ page.relativePath }}/images/DeploymentDiagram.png!
@@ -479,7 +500,13 @@ A diagram is associated to a package and when the user click on the diagram back
 If the user selects a container, the element will be created under the corresponding semantic element in the UML model.
 !{{ page.relativePath }}/images/DeploymentDiagramPalette.png!
 		
-Tooltip tools are also available to create any kind of elements.
+Tooltip tools are also available to create any kind of elements. You have the ability to create elements in a contextual way related to the currently selected elements.
+If your pointer is on the diagram background, after a few seconds you should see the following assistant :
+!{{ page.relativePath }}/images/using_deployment_diagram/assistant.png!
+If your pointer is *on a node* the assistant will be : 
+!{{ page.relativePath }}/images/using_deployment_diagram/assistant_node.png!
+
+Indeed, a node is a composite element.
 
 Creation tools are available in the deployment diagram for the following types :		
 		
@@ -488,6 +515,12 @@ Creation tools are available in the deployment diagram for the following types :
 |Device|!{{ page.relativePath }}/images/DeploymentDiagramDevice.png!|Physical electronic resource with processing capability|
 |Execution environment|!{{ page.relativePath }}/images/DeploymentDiagramExecutionEnvironment.png!|Specific node where artifacts are deployed|
 |Artifact|!{{ page.relativePath }}/images/DeploymentDiagramArtifact.png!|Physical piece of information used or produced by a system|
+
+So, the user can create deployment diagram defining : 
+* Device, Execution Environment, Node and links :
+!{{ page.relativePath }}/images/features/deployment_pics/links_between_nodes.png!
+* Composite nodes :
+!{{ page.relativePath }}/images/features/deployment_pics/composition.png!
 
 The user can also *delete an activity element* (see "Diagram editor/Editor tab-bar/Delete element/from model":{{ page.relativePath }}/ref-doc/define-the-system.html#Delete_element_from_model).
 
@@ -502,6 +535,17 @@ The following edge creation tools exist in the palette :
 |Generalization|!{{ page.relativePath }}/images/DeploymentDiagramGeneralization.png!|Indicates inheritance|
 |Deployment|!{{ page.relativePath }}/images/DeploymentDiagramDeployment.png!|Indicates the deployment of an artifact on a node|
 |Manifestation |!{{ page.relativePath }}/images/DeploymentDiagramManifestation.png!|An artifact embodies or manifests a number of model elements|
+
+The user can create : 
+* artifact dependencies and generalization:
+!{{ page.relativePath }}/images/features/deployment_pics/artifact_dependency_generalization.png!
+* artifact manifestation of packageable elements:
+!{{ page.relativePath }}/images/features/deployment_pics/artifact_manifestation_component_package.png!
+* artifact deployment :
+!{{ page.relativePath }}/images/features/deployment_pics/artifact_deployment.png!
+We have two way to deploy an artifact:
+* Deployment could be shown as a deploy dependency that is drawn from the artifact to the deployment target.
+* Deployment could also be shown with deployed artifacts contained by a deployment target.
 
 The user can also *delete a flow* (see "Diagram editor/Editor tab-bar/Delete element/from model":{{ page.relativePath }}/ref-doc/define-the-system.html#Delete_element_from_model).
 
@@ -550,26 +594,62 @@ The *add related elements* action is available from :
 
 h3. Edit labels
 
-In the package diagram, it is possible to edit the elements labels  (
-		see "Diagram editor/Editor main graphical area/Direct edit":{{ page.relativePath }}/ref-doc/define-the-system.html#Direct_edit). This actions allows to edit :
+In the package diagram, it is possible to edit the elements labels  (see "Diagram editor/Editor main graphical area/Direct edit":{{ page.relativePath }}/ref-doc/define-the-system.html#Direct_edit). This actions allows to edit :
 * component, node, device, execution environment, artifact labels
 * relationships labels
 
+We added a few accelerators so that you can quickly edit *labels* on elements or edges just by typing. Typing : 
+* @aNewName@ will update the label.
+
 h2. Extend UML standard
 
-h3. Define extensions
+h3(#Profile_Diagram). Define extensions
 
-Sometimes, the UML standard does not provide all the concepts expected by John. Thanks to the *Profile diagram*, it is possible to extend the standard to add new concepts or to adapt existing ones.
+Sometimes, the UML standard does not provide all the concepts expected by John. Thanks to the *profile diagram*, it is possible to extend the standard to add new concepts or to adapt existing ones. To use the profile diagram, the user must activate the @Extend@ viewpoint.
 
 The profile diagram operates at the metamodel level to provide new stereotypes and profiles.
 !{{ page.relativePath }}/images/ProfileDiagram.png!
 		
 
 To create a new profile, the user creates a new UML model and selects as root element a *Profile* element.
-Then on the newly created UML model, it is possible to create a new _Profile diagram_.
+Then on the newly created UML model, it is possible to create a *new Profile diagram*.
+!{{ page.relativePath }}/images/using_profile_diagram/new_profile_diagram_model.png!
+
+Another solution is to *right_click* on a model element in the Model Explorer and select the menu @New Representation > Profile Diagram@.
+!{{ page.relativePath }}/images/using_profile_diagram/new_profile_diagram_menu.png!
+
 
 The main feature is to create and delete stereotypes in the profile diagram. 
-A stereotype can be created by selecting the stereotype creation tool from the palette and then clicking on the diagram. A diagram is associated to a package and in this case the element is created under the corresponding package in the UML model. Tooltip tools are also available to create any kind of elements.
+A stereotype can be created by selecting the stereotype creation tool from the palette and then clicking on the diagram. A diagram is associated to a package and in this case the element is created under the corresponding package in the UML model.
+A tool is available in the palette to *create a stereotype*. 
+!{{ page.relativePath }}/images/using_profile_diagram/palette_stereotype.png!
+!{{ page.relativePath }}/images/using_profile_diagram/stereotype.png!
+
+By default, a stereotype does not extend any metaclass.
+
+A tool is available in the palette to *reference a metaclass*.
+!{{ page.relativePath }}/images/using_profile_diagram/palette_metaclass.png!
+!{{ page.relativePath }}/images/using_profile_diagram/metaclass.png!
+It opens a wizard which proposes all the available UML metaclass:
+!{{ page.relativePath }}/images/using_profile_diagram/wizard_metaclass.png!
+It is possible to filter the listed metaclass by :
+* Name
+* Only concrete metaclasses
+* Only sub classes of a selected metaclass
+
+A tool is available in the palette to *create extensions* for a stereotype.
+!{{ page.relativePath }}/images/using_profile_diagram/palette_extension.png!
+!{{ page.relativePath }}/images/using_profile_diagram/extension.png!
+According to the context, this tool will create an _Extension_ edge linking _Stereotype_ to an _Element Import_ or a _Generalization_ edge linking two _Stereotypes_. An _Element Import_ is an UML reference to an imported metaclass in a profile.
+!{{ page.relativePath }}/images/using_profile_diagram/wizard_metaclass.png!
+
+Another tool allows the *creation of an UML “Association”* between two stereotypes. 
+!{{ page.relativePath }}/images/using_profile_diagram/extra_association.png!
+Furthermore, this tool can suggest to reuse the existing relationship in the metamodel UML, if this relationship can link the metaclass referenced by the target and the source stereotype of the wanted association.
+If the user selects an existing relationship of the UML metamodel, then the tool will import the metaclass of the selected relationship and create a new stereotype that extend this relationship. Besides, the tool link graphically the new created stereotype and the source and target stereotype of the association
+!{{ page.relativePath }}/images/using_profile_diagram/wizard_extra_association.png!
+
+Tooltip tools are also available to create any kind of elements.
 
 The palette defines the following tools :
 * _*Stereotype*_ : Create a new stereotype. The user selects the tool in the palette or the tooltip and selects the diagram background. A new stereotype looks like a UML class and contains in its label the keyword _stereotype_. By default a stereotype does not extend any metaclass. But when the user validates the UML profile, a warning is thrown when a stereotype does not extend, directly or indirectly, a metaclass.
@@ -582,23 +662,50 @@ The palette defines the following tools :
 * _*Undefine*_ : Delete from the profile complementary information generated by the define command.
 * _*Export*_ : Create or update an eclipse plugin in order to deploy the edited profile in an Eclipse installation. This plugin must contain the profile, all its generated code and populate extensions to register itself to the platform.
 
-h3. Manage profiles and stereotypes
+h3. Defining a profile
 
-In UML Designer, a _Profile_ layer is available on all the diagrams. To describe his application John opens the existing diagrams and activates the profile layer.
+The palette provides a tool to *define a profile* in order to be able to apply this one for other UML model in the workspace. This tool add information about the version to the profile as _Ecore Annotation_. Mainly, the information required for the versioning are:
+* Version number
+* Date
+* Author
+* Comment
+* Copyright
+!{{ page.relativePath }}/images/using_profile_diagram/define_profile.png!
+
+Another tool is available to *undefine a profile*, this tool removes all the _EPackage_ representing the definition from the profile.
+
+h3. Exporting a profile
+
+An _export profile_ tool is available from the palette to export a profile as a jar file. This jar can be added to an eclipse platform to provide a profile as a registered package. The export operation creates an EMF project with an ecore file based on the profile model. Then an extension for the profile is added to the generated project (in “uml.generated_package” and “ecore.uri_mapping”). Finally, the tool builds and exports the created EMF project for the profile as a Deployable plug-in.
+The tool requires some necessary information for the creation of the deployable plug-in:
+* Profile name, which is editable in the profile model.
+* Profile URI.
+* Profile plug-in name.
+* Version information
+!{{ page.relativePath }}/images/using_profile_diagram/export_profile.png!
+
+h3(#Manage_profiles_and_stereotypes). Manage profiles and stereotypes
+
+In UML Designer, a _Profiles_ layer is available on all the diagrams. To describe his application John opens the existing diagrams and activates the profiles layer.
 !{{ page.relativePath }}/images/ProfileLayer.png!
 		
 This layer provides a new section in the palette.
 !{{ page.relativePath }}/images/ProfileLayerPalette.png!
 		
-The following tools are available :
-* _*apply a profile*_  : the user selects the _Apply profile_ tool in the palette and clicks on the diagram, a wizards opens which shows the applicable and already applied profiles.
+A new tool _*Stereotypes*_ is available. Then, the user selects the _Stereotypes_ tool in the palette and selects an element in the diagram, a wizards opens which shows the applicable and already applied stereotypes according to the available profiles. The stereotypes wizard lists all the stereotypes even if the profile was not applied before on the parent package. The tool will automatically applies the profiles before applying the selected stereotypes.
 
-!{{ page.relativePath }}/images/ApplyProfile.png!
+!{{ page.relativePath }}/images/ProfileLayerStereotypesWizard.png!
+
+When a stereotype is applied on an element, a keyword representing the name of the stereotype is added before the label of the element :
 		
-* _*apply stereotype*_ : the user selects the _Apply stereotype_ tool in the palette and selects an element in the diagram, a wizards opens which shows the applicable and already applied stereotypes according to the activated profiles. When a stereotype is applied on an element, a keyword representing the name of the stereotype is added before the label of the element :
+!{{ page.relativePath }}/images/ClassWithStereotype.png!
 		
-!{{ page.relativePath }}/images/ApplyStereotype.png!
-		
+It is also possible to manage from the property view :
+* the stereotypes in the *Stereotypes* tab. For example if the user selects a class, he will see:
+!{{ page.relativePath }}/images/ManageStereotypesFromPropertyView.png!
+* the profiles in the *Profiles* tab available on _Package_ elements. For example if the user selects a package (or the background of a class diagram as usually it is associated to a package) :
+!{{ page.relativePath }}/images/ManageProfilesFromPropertyView.png!
+
 If the profile defines some properties on the stereotypes, these properties are available in the property box, after canonical properties of the element. Here is a sample with a Stereotype adding a “tagged value” on a package:
 
 !{{ page.relativePath }}/images/ProfileDiagramTaggedValue.png!

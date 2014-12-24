@@ -12,6 +12,8 @@ package org.obeonetwork.dsl.uml2.design.services.internal;
 
 import java.util.List;
 
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.uml2.uml.Association;
 import org.eclipse.uml2.uml.Class;
 import org.eclipse.uml2.uml.Classifier;
@@ -21,6 +23,9 @@ import org.eclipse.uml2.uml.ComponentRealization;
 import org.eclipse.uml2.uml.ConnectableElement;
 import org.eclipse.uml2.uml.Connector;
 import org.eclipse.uml2.uml.Dependency;
+import org.eclipse.uml2.uml.DeployedArtifact;
+import org.eclipse.uml2.uml.Deployment;
+import org.eclipse.uml2.uml.DeploymentTarget;
 import org.eclipse.uml2.uml.Element;
 import org.eclipse.uml2.uml.ElementImport;
 import org.eclipse.uml2.uml.Extension;
@@ -29,6 +34,8 @@ import org.eclipse.uml2.uml.Generalization;
 import org.eclipse.uml2.uml.Interface;
 import org.eclipse.uml2.uml.InterfaceRealization;
 import org.eclipse.uml2.uml.NamedElement;
+import org.eclipse.uml2.uml.Package;
+import org.eclipse.uml2.uml.PackageableElement;
 import org.eclipse.uml2.uml.ParameterableElement;
 import org.eclipse.uml2.uml.Property;
 import org.eclipse.uml2.uml.Stereotype;
@@ -100,6 +107,28 @@ public class ReconnectSwitch extends UMLSwitch<Element> {
 			}
 		}
 		return generalization;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Element caseDeployment(Deployment deployment) {
+		if (newPointedElement instanceof Classifier) {
+			if (RECONNECT_SOURCE == reconnectKind) {
+				deployment.getSuppliers().clear();
+				deployment.getSuppliers().add((Classifier)newPointedElement);
+
+				deployment.getDeployedArtifacts().clear();
+				deployment.getDeployedArtifacts().add((DeployedArtifact)newPointedElement);
+			} else {
+				deployment.getClients().clear();
+				((Classifier)newPointedElement).getClientDependencies().add(deployment);
+				((DeploymentTarget)newPointedElement).getDeployments().add(deployment);
+			}
+			return deployment;
+		}
+		return deployment;
 	}
 
 	/**
@@ -268,6 +297,64 @@ public class ReconnectSwitch extends UMLSwitch<Element> {
 			}
 		}
 		return tmplBinding;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Element casePackage(Package pkg) {
+		if (RECONNECT_TARGET == reconnectKind) {
+			if (newPointedElement instanceof Package) {
+				((Package)newPointedElement).getPackagedElements().add(pkg);
+			} else if (newPointedElement instanceof Component) {
+				((Component)newPointedElement).getPackagedElements().add(pkg);
+			}
+		} else {
+			if (newPointedElement instanceof PackageableElement) {
+				EObject newParent = pkg.eContainer();
+				if (newParent instanceof Package) {
+					((Package)newParent).getPackagedElements().add((PackageableElement)newPointedElement);
+				} else if (newParent instanceof Component) {
+					((Component)newParent).getPackagedElements().add((PackageableElement)newPointedElement);
+				}
+
+				EObject root = EcoreUtil.getRootContainer(pkg);
+				if (root instanceof Package) {
+					((Package)root).getPackagedElements().add(pkg);
+				}
+			}
+		}
+		return pkg;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Element caseComponent(Component component) {
+		if (RECONNECT_TARGET == reconnectKind) {
+			if (newPointedElement instanceof Package) {
+				((Package)newPointedElement).getPackagedElements().add(component);
+			} else if (newPointedElement instanceof Component) {
+				((Component)newPointedElement).getPackagedElements().add(component);
+			}
+		} else {
+			if (newPointedElement instanceof PackageableElement) {
+				EObject newParent = component.eContainer();
+				if (newParent instanceof Package) {
+					((Package)newParent).getPackagedElements().add((PackageableElement)newPointedElement);
+				} else if (newParent instanceof Component) {
+					((Component)newParent).getPackagedElements().add((PackageableElement)newPointedElement);
+				}
+
+				EObject root = EcoreUtil.getRootContainer(component);
+				if (root instanceof Package) {
+					((Package)root).getPackagedElements().add(component);
+				}
+			}
+		}
+		return component;
 	}
 
 	/**
