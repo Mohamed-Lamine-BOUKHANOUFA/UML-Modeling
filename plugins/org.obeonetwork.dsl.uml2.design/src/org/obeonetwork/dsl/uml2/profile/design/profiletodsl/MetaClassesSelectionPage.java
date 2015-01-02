@@ -50,6 +50,7 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
@@ -72,9 +73,9 @@ public class MetaClassesSelectionPage extends WizardPage {
 
 	private ComboBoxViewerCellEditor comboBoxCellEditor;
 
-	protected EList<EClassifier> importedMetaClasses = new BasicEList<EClassifier>();
+	protected EList<EClassifier> importedMetaClassesInTheProfile = new BasicEList<EClassifier>();
 
-	protected EList<EClassifier> candidateImportedMetaClassesToKeep = new BasicEList<EClassifier>();
+	protected EList<EClassifier> candidateMetaClassesForTheDSL = new BasicEList<EClassifier>();
 
 	protected EList<EObject> eObjectToDelete = new BasicEList<EObject>();
 
@@ -143,8 +144,61 @@ public class MetaClassesSelectionPage extends WizardPage {
 		containerCheckedTreeViewer.getTree().setHeaderVisible(true);
 		containerCheckedTreeViewer.getTree().setLinesVisible(true);
 
+		Composite expandCollapseContainer = new Composite(container, SWT.NULL);
+		expandCollapseContainer.setLayout(new RowLayout());
+
+		Button checkAll = new Button(expandCollapseContainer, SWT.NONE);
+		checkAll.setText(" v ");
+		checkAll.setToolTipText("Check All");
+		checkAll.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				setAllChecked(containerCheckedTreeViewer, true);
+			}
+		});
+
+		Button unCheckAll = new Button(expandCollapseContainer, SWT.NONE);
+		unCheckAll.setText("  ");
+		unCheckAll.setToolTipText("Uncheck All");
+		unCheckAll.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				setAllChecked(containerCheckedTreeViewer, false);
+			}
+		});
+
+		Button collapseAll = new Button(expandCollapseContainer, SWT.NONE);
+		collapseAll.setText(" - ");
+		collapseAll.setToolTipText("Collapse All");
+		collapseAll.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				containerCheckedTreeViewer.collapseAll();
+			}
+		});
+
+		Button expandAll = new Button(expandCollapseContainer, SWT.NONE);
+		expandAll.setText("+");
+		expandAll.setToolTipText("Expand All");
+		expandAll.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				containerCheckedTreeViewer.expandAll();
+			}
+		});
+
+		Button recommendedElements = new Button(expandCollapseContainer, SWT.NONE);
+		recommendedElements.setText("&Recommended Elements");
+		recommendedElements.setToolTipText("Check Recommended Elements");
+		recommendedElements.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				checkRecommendedElements(containerCheckedTreeViewer);
+			}
+		});
+
 		Button createEMFProject = new Button(container, SWT.NONE);
-		createEMFProject.setText("Apply selection");
+		createEMFProject.setText("&Apply selection");
 		createEMFProject.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 		createEMFProject.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -182,24 +236,63 @@ public class MetaClassesSelectionPage extends WizardPage {
 
 	}
 
+	/**
+	 * Check the elements that not reference an UML element.
+	 * @param containerCheckedTreeViewer_p
+	 */
+	protected void checkRecommendedElements(ContainerCheckedTreeViewer containerCheckedTreeViewer_p) {
+		if (containerCheckedTreeViewer_p.getInput() instanceof List) {
+			List<?> treeInput = (List<?>)containerCheckedTreeViewer_p.getInput();
+			for (Object object : treeInput) {
+				if (object instanceof EClass) {
+					EClass eClass = (EClass)object;
+					if (eClass.getEStructuralFeatures().isEmpty()) {
+						containerCheckedTreeViewer_p.setChecked(object, true);
+
+					} else {
+						for (EStructuralFeature eStructuralFeature : eClass.getEStructuralFeatures()) {
+							if (eStructuralFeature.getEType().eResource().getURI().toString()
+									.endsWith("uml.ecore")) {
+								containerCheckedTreeViewer_p.setChecked(eStructuralFeature, false);
+							} else {
+								containerCheckedTreeViewer_p.setChecked(eStructuralFeature, true);
+							}
+
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * initialize the input of the meta classes selection page.
+	 */
 	public void initInput() {
 
 		ecoreModel = GenericUMLProfileTools.load(profileEcoreResource.getURI(),
 				EcorePackage.Literals.EPACKAGE);
 		MetaClassesSelection metaClassesSelection = new MetaClassesSelection(ecoreModel);
-		metaClassesSelection.identifyCandidateMetaClasses();
-		importedMetaClasses = metaClassesSelection.getImportedMetaClasses();
-		candidateImportedMetaClassesToKeep = metaClassesSelection.getCandidateImportedMetaClassesToKeep();
+		metaClassesSelection.createCandidateMetaClassesAndReferences();
+		importedMetaClassesInTheProfile = metaClassesSelection.getImportedMetaClassesInTheProfile();
+		candidateMetaClassesForTheDSL = metaClassesSelection.getCandidateMetaClassesForTheDSL();
 		if (containerCheckedTreeViewer.getInput() == null) {
-			containerCheckedTreeViewer.setInput(candidateImportedMetaClassesToKeep);
+			containerCheckedTreeViewer.setInput(candidateMetaClassesForTheDSL);
+			containerCheckedTreeViewer.setSubtreeChecked(candidateMetaClassesForTheDSL, true);
 		}
 
-		comboBoxCellEditor.setInput(Tools.getAllEClassifiers(ecoreModel));
 
+		comboBoxCellEditor.setInput(Tools.getAllEClassifiers(ecoreModel));
+		containerCheckedTreeViewer.expandAll();
+		containerCheckedTreeViewer.collapseAll();
 	}
 
-	// The following class adds border to the text box and sets it height to 10 pixels more than the font
-	// height.
+	/**
+	 * This class adds border to the text box and sets it height to 10 pixels more than the font height.
+	 *
+	 * @author Mohamed-Lamine BOUKHANOUFA <a
+	 *         href="mailto:mohamed-lamine.boukhanoufa@obeo.fr">mohamed-lamine.boukhanoufa@obeo.fr</a> * *
+	 */
 	class MyTextCellEditor extends TextCellEditor {
 		int minHeight = 0;
 
@@ -221,6 +314,12 @@ public class MetaClassesSelectionPage extends WizardPage {
 		}
 	}
 
+	/**
+	 * Cell Editing support for the Meta Classes Selection page.
+	 *
+	 * @author Mohamed-Lamine BOUKHANOUFA <a
+	 *         href="mailto:mohamed-lamine.boukhanoufa@obeo.fr">mohamed-lamine.boukhanoufa@obeo.fr</a> * *
+	 */
 	public final class ComboBoxEditingSupport extends EditingSupport {
 
 		private ComboBoxEditingSupport(ColumnViewer viewer) {
@@ -268,6 +367,12 @@ public class MetaClassesSelectionPage extends WizardPage {
 
 	}
 
+	/**
+	 * The label provider for viewers that have column support such as TreeViewer and TableViewerell.
+	 *
+	 * @author Mohamed-Lamine BOUKHANOUFA <a
+	 *         href="mailto:mohamed-lamine.boukhanoufa@obeo.fr">mohamed-lamine.boukhanoufa@obeo.fr</a> * *
+	 */
 	public class EcoreElementLabelProvider extends ColumnLabelProvider {
 		@Override
 		public String getText(Object element) {
@@ -284,6 +389,12 @@ public class MetaClassesSelectionPage extends WizardPage {
 		}
 	}
 
+	/**
+	 * The label provider for viewers that have column support such as TreeViewer and TableViewerell.
+	 *
+	 * @author Mohamed-Lamine BOUKHANOUFA <a
+	 *         href="mailto:mohamed-lamine.boukhanoufa@obeo.fr">mohamed-lamine.boukhanoufa@obeo.fr</a> * *
+	 */
 	public class EcoreElementNameLabelProvider extends ColumnLabelProvider {
 		@Override
 		public String getText(Object element) {
@@ -324,6 +435,12 @@ public class MetaClassesSelectionPage extends WizardPage {
 		}
 	}
 
+	/**
+	 * Cell Editing support for the Meta Classes Selection page.
+	 *
+	 * @author Mohamed-Lamine BOUKHANOUFA <a
+	 *         href="mailto:mohamed-lamine.boukhanoufa@obeo.fr">mohamed-lamine.boukhanoufa@obeo.fr</a> * *
+	 */
 	public class NameEditingSupport extends EditingSupport {
 		ContainerCheckedTreeViewer containerCheckedTreeViewer;
 
@@ -362,6 +479,12 @@ public class MetaClassesSelectionPage extends WizardPage {
 		}
 	}
 
+	/**
+	 * Cell Editing support for the Meta Classes Selection page.
+	 *
+	 * @author Mohamed-Lamine BOUKHANOUFA <a
+	 *         href="mailto:mohamed-lamine.boukhanoufa@obeo.fr">mohamed-lamine.boukhanoufa@obeo.fr</a> * *
+	 */
 	public class BoundEditingSupport extends EditingSupport {
 		ContainerCheckedTreeViewer containerCheckedTreeViewer;
 
@@ -418,6 +541,12 @@ public class MetaClassesSelectionPage extends WizardPage {
 		}
 	}
 
+	/**
+	 * Content providers for tree-structure-oriented viewers.
+	 *
+	 * @author Mohamed-Lamine BOUKHANOUFA <a
+	 *         href="mailto:mohamed-lamine.boukhanoufa@obeo.fr">mohamed-lamine.boukhanoufa@obeo.fr</a> * *
+	 */
 	public class MyTreeContentProvider implements ITreeContentProvider {
 
 		private Object[] EMPTY_ARRAY = new Object[0];
@@ -462,11 +591,17 @@ public class MetaClassesSelectionPage extends WizardPage {
 
 	}
 
+	/**
+	 * Apply the user meta classes selection to the DSL meta model.
+	 */
 	public void applySelection() {
 
-		for (EClassifier eClassifier : candidateImportedMetaClassesToKeep) {
-			if (containerCheckedTreeViewer.getChecked(eClassifier)) {
-				for (Iterator<EStructuralFeature> iterator = ((EClass)eClassifier)
+		for (EClassifier candidateMetaClasseForTheDSL : candidateMetaClassesForTheDSL) {
+			if (containerCheckedTreeViewer.getChecked(candidateMetaClasseForTheDSL)) {
+				if (!ecoreModel.getEClassifiers().contains(candidateMetaClasseForTheDSL)) {
+					ecoreModel.getEClassifiers().add(candidateMetaClasseForTheDSL);
+				}
+				for (Iterator<EStructuralFeature> iterator = ((EClass)candidateMetaClasseForTheDSL)
 						.getEAllStructuralFeatures().iterator(); iterator.hasNext();) {
 					EObject eObject = iterator.next();
 					if (!containerCheckedTreeViewer.getChecked(eObject)
@@ -476,7 +611,7 @@ public class MetaClassesSelectionPage extends WizardPage {
 					}
 				}
 			} else {
-				eObjectToDelete.add(eClassifier);
+				eObjectToDelete.add(candidateMetaClasseForTheDSL);
 
 			}
 		}
@@ -485,7 +620,32 @@ public class MetaClassesSelectionPage extends WizardPage {
 
 	}
 
+	/**
+	 * Set the profile ecore resource.
+	 * 
+	 * @param profileEcoreResource
+	 */
 	public void setProfileEcoreResource(Resource profileEcoreResource) {
 		this.profileEcoreResource = profileEcoreResource;
+	}
+    
+	/**
+	 * Sets to the given value the checked state for all elements in this viewer.
+	 *
+	 * @param containerCheckedTreeViewer_p
+	 *            the {@link ContainerCheckedTreeViewer}
+	 * @param state
+	 *            <code>true</code> if the element should be checked, and <code>false</code> if it should be
+	 *            unchecked
+	 */
+
+	public void setAllChecked(ContainerCheckedTreeViewer containerCheckedTreeViewer_p, boolean state) {
+		if (containerCheckedTreeViewer_p.getInput() instanceof List) {
+			List<?> treeInput = (List<?>)containerCheckedTreeViewer_p.getInput();
+			for (Object object : treeInput) {
+				containerCheckedTreeViewer_p.setChecked(object, state);
+			}
+		}
+
 	}
 }

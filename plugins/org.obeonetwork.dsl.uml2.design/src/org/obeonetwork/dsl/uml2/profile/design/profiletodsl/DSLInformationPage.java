@@ -226,7 +226,7 @@ public class DSLInformationPage extends WizardPage {
 		gridData.grabExcessHorizontalSpace = true;
 
 		createEMFProject = new Button(standardContentArea, SWT.NONE);
-		createEMFProject.setText("Create the Ecore plug-in");
+		createEMFProject.setText("&Create the Ecore plug-in");
 		createEMFProject.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 		createEMFProject.addSelectionListener(new SelectionAdapter() {
 			@Override

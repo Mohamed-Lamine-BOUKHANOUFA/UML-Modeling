@@ -31,9 +31,9 @@ public class MetaClassesSelection {
 
 	protected EPackage ecoreModel;
 
-	protected EList<EClassifier> importedMetaClasses = new BasicEList<EClassifier>();
+	protected EList<EClassifier> importedMetaClassesInTheProfile = new BasicEList<EClassifier>();
 
-	protected EList<EClassifier> candidateImportedMetaClassesToKeep = new BasicEList<EClassifier>();
+	protected EList<EClassifier> candidateMetaClassesForTheDSL = new BasicEList<EClassifier>();
 
 	protected EList<EObject> eObjectToDelete = new BasicEList<EObject>();
 
@@ -43,17 +43,17 @@ public class MetaClassesSelection {
 	 */
 
 	/**
-	 * @return the importedMetaClasses
+	 * @return the imported MetaClasses In The Profile
 	 */
-	public EList<EClassifier> getImportedMetaClasses() {
-		return importedMetaClasses;
+	public EList<EClassifier> getImportedMetaClassesInTheProfile() {
+		return importedMetaClassesInTheProfile;
 	}
 
 	/**
-	 * @return the candidateImportedMetaClassesToKeep
+	 * @return the candidate MetaClasses For The DSL
 	 */
-	public EList<EClassifier> getCandidateImportedMetaClassesToKeep() {
-		return candidateImportedMetaClassesToKeep;
+	public EList<EClassifier> getCandidateMetaClassesForTheDSL() {
+		return candidateMetaClassesForTheDSL;
 	}
 
 	/**
@@ -67,32 +67,40 @@ public class MetaClassesSelection {
 	/*********************************** Core of the work ***************************************/
 	/********************************************************************************************/
 
-	public void identifyCandidateMetaClasses() {
+	/**
+	 * Identify and create the candidate meta classes and references that can be selected by the user to added
+	 * to the resultant meta model (Ecore)
+	 */
+	public void createCandidateMetaClassesAndReferences() {
 
-		findCandidateMetaClassesToKeep(ecoreModel);
+		createCandidateMetaClassesAndReferences(ecoreModel);
 		Tools.cleanModel(eObjectToDelete);
 		Tools.save(ecoreModel);
 	}
 
 	/**
-	 * Remove the base attributes from the classes of a given ecore model.
+	 * Identify and create the candidate meta classes and references that can be selected by the user to added
+	 * to the resultant meta model (Ecore)
 	 * 
 	 * @param ecoreModel
-	 *            the ecore model.
+	 *            the {@link EPackage}.
 	 */
-	public void findCandidateMetaClassesToKeep(EPackage ecoreModel) {
+	public void createCandidateMetaClassesAndReferences(EPackage ecoreModel) {
 		for (EObject iterable_EObject : ecoreModel.eContents()) {
-			handleEObject(iterable_EObject);
+			// Handle Base references: replace the base references by generalizations to new created abstract
+			// classes
+			handleBaseReferencesOfEObject(iterable_EObject);
 		}
-		findCandidateEReferenceOfImportedClasses(ecoreModel);
+		createCandidateEReferenceOfImportedClasses(ecoreModel);
 	}
 
 	/**
-	 * Remove the base attributes from the classes of a given ecore object.
+	 * Handle the base {@link EReference}s of a given {@link EObject}.
 	 * 
 	 * @param eObject
+	 *            the {@link EObject}.
 	 */
-	public void handleEObject(EObject eObject) {
+	public void handleBaseReferencesOfEObject(EObject eObject) {
 		for (EObject iterable_EObject : eObject.eContents()) {
 			if (iterable_EObject instanceof EReference && eObject instanceof EClass) {
 				if (isBaseReference((EReference)iterable_EObject)) {
@@ -100,17 +108,17 @@ public class MetaClassesSelection {
 
 				}
 			} else {
-				handleEObject(iterable_EObject);
+				handleBaseReferencesOfEObject(iterable_EObject);
 			}
 		}
 	}
 
 	/**
-	 * Test of the reference is a base reference.
+	 * Verify if the {@link EReference} is a base reference.
 	 * 
 	 * @param eReference
-	 *            the reference to test.
-	 * @return true if is a reference base, else false
+	 *            the {@link EReference} to test.
+	 * @return <code>true</code> if the {@link EReference} is a base reference, else <code>false</code>
 	 */
 	public boolean isBaseReference(EReference eReference) {
 
@@ -121,14 +129,15 @@ public class MetaClassesSelection {
 	}
 
 	/**
-	 * Handle a reference of a class by the creation of a new abstract class using the name of the type of the
-	 * reference and create a generalization link from the class (owner of the reference) to the new created
-	 * abstract class. Then, remove the reference.
+	 * Handle a given base {@link EReference} of a given {@link EClass} by the creation of a new abstract
+	 * {@link EClass} using the name of the type of the {@link EReference} and create a generalization link
+	 * from the {@link EClass} (owner of the {@link EReference}) to the new created abstract {@link EClass}.
+	 * Then, remove the {@link EReference}.
 	 * 
 	 * @param eReference
-	 *            the reference
+	 *            the {@link EReference}
 	 * @param eClass
-	 *            the class owner of the reference
+	 *            the {@link EClass} owner of the {@link EReference}
 	 */
 	public void handleBaseReference(EReference eReference, EClass eClass) {
 		EClass importedMetaClassCopy;
@@ -148,8 +157,8 @@ public class MetaClassesSelection {
 				}
 			}
 			ecoreModel.getEClassifiers().add(importedMetaClassCopy);
-			importedMetaClasses.add(eReference.getEType());
-			candidateImportedMetaClassesToKeep.add(importedMetaClassCopy);
+			importedMetaClassesInTheProfile.add(eReference.getEType());
+			candidateMetaClassesForTheDSL.add(importedMetaClassCopy);
 
 		}
 		eClass.getESuperTypes().add(importedMetaClassCopy);
@@ -179,65 +188,88 @@ public class MetaClassesSelection {
 		return null;
 	}
 
-	public void findCandidateEReferenceOfImportedClasses(EPackage ecoreModel) {
+	/**
+	 * Create the candidate {@link EReference}s and the potential related {@link EClass}s to the imported
+	 * metaClass in the given {@link EPckage}.
+	 * 
+	 * @param ecoreModel
+	 */
+	public void createCandidateEReferenceOfImportedClasses(EPackage ecoreModel) {
 		EList<EReference> candidateEReference = new BasicEList<EReference>();
-		for (EClassifier eClassifier : importedMetaClasses) {
-			if (eClassifier instanceof EClass) {
-				EClass eClassCondidate = Tools.getElementByName(eClassifier.getName(),
-						candidateImportedMetaClassesToKeep);
+		for (EClassifier importedMetaClasseInTheProfile : importedMetaClassesInTheProfile) {
+			if (importedMetaClasseInTheProfile instanceof EClass) {
+				EClass candidateMetaClasseForTheDSL = Tools.getElementByName(importedMetaClasseInTheProfile.getName(),
+						candidateMetaClassesForTheDSL);
 
-				EClass eClass = ((EClass)eClassifier);
 				candidateEReference = new BasicEList<EReference>();
-				candidateEReference = getCandidateEReference(eClass, ecoreModel);
-				eClassCondidate.getEStructuralFeatures().addAll(candidateEReference);
+				candidateEReference = getCandidateEReference(((EClass)importedMetaClasseInTheProfile),
+						ecoreModel);
+				candidateMetaClasseForTheDSL.getEStructuralFeatures().addAll(candidateEReference);
 			}
 		}
 	}
 
-	public EList<EReference> getCandidateEReference(EClass eClass, EPackage ecoreModel) {
+	/**
+	 * Identify and create the candidate {@link EReference}s and the potential related {@link EClass}s to a
+	 * given {@link EClass}.
+	 * 
+	 * @param importedMetaClasseInTheProfile_p
+	 *            the {@link EClass}
+	 * @param ecoreModel
+	 * @return the {@link EReference}s.
+	 */
+	public EList<EReference> getCandidateEReference(EClass importedMetaClasseInTheProfile_p, EPackage ecoreModel) {
 
-		EList<EReference> porposedEReferences = new BasicEList<EReference>();
+		EList<EReference> candidateEReferences = new BasicEList<EReference>();
 		EList<EClassifier> eClassifierTypes = new BasicEList<EClassifier>();
 		boolean superEReferenceTypeIsToImport = false;
-		for (EReference eReference : eClass.getEAllReferences()) {
+
+		for (EReference eReference : importedMetaClasseInTheProfile_p.getEAllReferences()) {
+
 			EReference eReferenceToAdd = EcoreUtil.copy(eReference);
 			eClassifierTypes = new BasicEList<EClassifier>();
 			superEReferenceTypeIsToImport = false;
-			EClass refType = eReference.getEReferenceType();
+			EClass eReferenceType = eReference.getEReferenceType();
 
-			for (EClassifier eClassifierType : importedMetaClasses) {
+			for (EClassifier importedMetaClasseInTheProfile : importedMetaClassesInTheProfile) {
 
-				if (eClassifierType.equals(refType)
-						|| (eClassifierType instanceof EClass && ((EClass)eClassifierType)
-								.getEAllSuperTypes().contains(refType))) {
+				if (importedMetaClasseInTheProfile.equals(eReferenceType)
+						|| (importedMetaClasseInTheProfile instanceof EClass && ((EClass)importedMetaClasseInTheProfile)
+								.getEAllSuperTypes().contains(eReferenceType))) {
 					if (!superEReferenceTypeIsToImport) {
-						porposedEReferences.add(eReferenceToAdd);
+						candidateEReferences.add(eReferenceToAdd);
+						superEReferenceTypeIsToImport = true;
 					}
-					eClassifierTypes.add(Tools.getElementByName(eClassifierType.getName(),
-							candidateImportedMetaClassesToKeep));
-					superEReferenceTypeIsToImport = true;
+					eClassifierTypes.add(Tools.getElementByName(importedMetaClasseInTheProfile.getName(),
+							candidateMetaClassesForTheDSL));
 				}
 			}
 			// Create a new "Meta" abstract class for super class of two or more base classes, if this super
 			// class is a type of a reference of one base class.
 			if (superEReferenceTypeIsToImport && eClassifierTypes.size() > 1) {
-				String xBaseESuperClassName = refType.getName();
-				EClass xBaseESupperClass = Tools.getElementByName("Meta" + xBaseESuperClassName,
-						candidateImportedMetaClassesToKeep);
+				String xBaseESuperClassName = eReferenceType.getName();
+				EClass xBaseESupperClass = Tools.getElementByName(xBaseESuperClassName,
+						candidateMetaClassesForTheDSL);
+				if (xBaseESupperClass == null) {
+					xBaseESupperClass = Tools.getElementByName("Meta" + xBaseESuperClassName,
+							candidateMetaClassesForTheDSL);
+				}
 				if (xBaseESupperClass == null) {
 					xBaseESupperClass = EcoreFactory.eINSTANCE.createEClass();
 					xBaseESupperClass.setName("Meta" + xBaseESuperClassName);
 					xBaseESupperClass.setAbstract(true);
 					xBaseESupperClass.getEStructuralFeatures().addAll(
-							(Collection<? extends EStructuralFeature>)Tools.getCopy(refType
+							(Collection<? extends EStructuralFeature>)Tools.getCopy(eReferenceType
 									.getEAllAttributes()));
-					candidateImportedMetaClassesToKeep.add(xBaseESupperClass);
+					candidateMetaClassesForTheDSL.add(xBaseESupperClass);
 					ecoreModel.getEClassifiers().add(xBaseESupperClass);
 
 				}
 				eReferenceToAdd.setEType(xBaseESupperClass);
 				for (EClassifier eClassifier : eClassifierTypes) {
+					if (!eClassifier.equals(xBaseESupperClass)) {
 					((EClass)eClassifier).getESuperTypes().add(xBaseESupperClass);
+					}
 				}
 
 			} else if (superEReferenceTypeIsToImport) {
@@ -245,7 +277,7 @@ public class MetaClassesSelection {
 			}
 
 		}
-		return porposedEReferences;
+		return candidateEReferences;
 	}
 
 	void prepareCandidateBaseClasses() {
