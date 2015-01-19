@@ -55,14 +55,14 @@ public class DSLInformation {
 	 * Create a new EMF project.
 	 */
 	Resource createEcoreModel(IWizard wizard, final String dslPluginName, final Profile rootProfile,
-			final String dslName) {
+			final String dslName, final String dslUri) {
 		final Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 
 		try {
 			wizard.getContainer().run(true, true, new IRunnableWithProgress() {
 				public void run(IProgressMonitor monitor) {
 					monitor.beginTask("Ecore plug-in creation ...", 100);
-					monitor.subTask("Create the model plgu-in");
+					monitor.subTask("Create the model plug-in");
 					final IProject profilePlugin = ExportProfileService.createPluginProject(dslPluginName,
 							shell);
 					monitor.worked(20);
@@ -97,6 +97,7 @@ public class DSLInformation {
 					final Profile profileCopy = (Profile)GenericUMLProfileTools.load(profileCopyResource
 							.getURI());
 					UMLProfileServices.undefineProfile(profileCopy);
+					profileCopy.setURI(dslUri);
 					GenericUMLProfileTools.save(profileCopy);
 
 					// create the ecore file

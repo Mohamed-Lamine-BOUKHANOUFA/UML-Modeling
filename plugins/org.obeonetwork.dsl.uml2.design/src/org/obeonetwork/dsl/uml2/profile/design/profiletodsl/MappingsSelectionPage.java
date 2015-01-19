@@ -22,8 +22,6 @@ import org.eclipse.emf.ecore.ENamedElement;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
-import org.eclipse.emf.ecore.EStructuralFeature;
-import org.eclipse.emf.ecore.ETypedElement;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CellEditor;
@@ -61,9 +59,11 @@ import org.eclipse.ui.dialogs.ContainerCheckedTreeViewer;
  * @author Mohamed-Lamine BOUKHANOUFA <a
  *         href="mailto:mohamed-lamine.boukhanoufa@obeo.fr">mohamed-lamine.boukhanoufa@obeo.fr</a> *
  */
-public class MetaClassesSelectionPage extends WizardPage {
+public class MappingsSelectionPage extends WizardPage {
 
 	protected DslEAnnotation dslEAnnotation;
+
+	protected ProfileToDSLWizard profileToDSLWizard;
 
 	protected EPackage profileEcoreModel;
 
@@ -80,7 +80,7 @@ public class MetaClassesSelectionPage extends WizardPage {
 	 *
 	 * @param pageName
 	 */
-	public MetaClassesSelectionPage(String pageName) {
+	public MappingsSelectionPage(String pageName) {
 		super(pageName);
 	}
 
@@ -90,7 +90,7 @@ public class MetaClassesSelectionPage extends WizardPage {
 	 * @param pageName
 	 * @param title
 	 */
-	public MetaClassesSelectionPage(String pageName, String title) {
+	public MappingsSelectionPage(String pageName, String title) {
 		super(pageName);
 		setTitle(title);
 	}
@@ -102,14 +102,22 @@ public class MetaClassesSelectionPage extends WizardPage {
 	 * @param title
 	 * @param titleImage
 	 */
-	public MetaClassesSelectionPage(String pageName, String title, ImageDescriptor titleImage) {
+	public MappingsSelectionPage(String pageName, String title, ImageDescriptor titleImage) {
 		super(pageName, title, titleImage);
 	}
 
 	/**
+	 * Refresh the graphical elements.
+	 */
+	public void refresh() {
+		containerCheckedTreeViewer.refresh();
+	}
+	/**
 	 * {@inheritDoc}
 	 */
 	public void createControl(Composite parent) {
+		profileToDSLWizard = (ProfileToDSLWizard)this.getWizard();
+
 		Composite container = new Composite(parent, SWT.NULL);
 		container.setLayout(new GridLayout());
 
@@ -120,22 +128,20 @@ public class MetaClassesSelectionPage extends WizardPage {
 		container.setLayout(gridLayout);
 
 		Label label1 = new Label(container, SWT.NONE);
-		label1.setText("Select the meta-classes to be kept in the DSL meta-model.");
+		label1.setText("Select the mappings to be used in the VSM of the DSL.");
 		Label line = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
 		line.setLayoutData(dataFillHorizontal);
-
 
 		containerCheckedTreeViewer = new ContainerCheckedTreeViewer(container, SWT.BORDER);
 		containerCheckedTreeViewer.addCheckStateListener(new ICheckStateListener() {
 
 			public void checkStateChanged(CheckStateChangedEvent event) {
-				dslEAnnotation.setDslFactoryeAnnotation(event.getElement(),
-						String.valueOf(event.getChecked()));
+				dslEAnnotation.setVSMMappingSelection(event.getElement(), String.valueOf(event.getChecked()));
 				if (event.getSource() instanceof ContainerCheckedTreeViewer) {
-					
-					dslEAnnotation.setDslFactoryeAnnotationToFalse(((ContainerCheckedTreeViewer)event
+
+					dslEAnnotation.setVSMMappingSelectionToFalse(((ContainerCheckedTreeViewer)event
 							.getSource()).getInput());
-					dslEAnnotation.setDslFactoryeAnnotationToTrue(((ContainerCheckedTreeViewer)event
+					dslEAnnotation.setVSMMappingSelectionToTrue(((ContainerCheckedTreeViewer)event
 							.getSource()).getCheckedElements());
 				}
 				refreshPages();
@@ -150,25 +156,15 @@ public class MetaClassesSelectionPage extends WizardPage {
 		umlElmentColumn.setLabelProvider(new EcoreElementLabelProvider());
 		umlElmentColumn.getColumn().setWidth(300);
 
-		TreeViewerColumn nameColumn = new TreeViewerColumn(containerCheckedTreeViewer, SWT.LEFT);
-		nameColumn.getColumn().setText("Name");
-		nameColumn.setLabelProvider(new EcoreElementNameLabelProvider());
-		nameColumn.getColumn().setWidth(200);
+		TreeViewerColumn mappingNameColumn = new TreeViewerColumn(containerCheckedTreeViewer, SWT.LEFT);
+		mappingNameColumn.getColumn().setText("Mapping Name");
+		mappingNameColumn.setLabelProvider(new MappingNameLabelProvider());
+		mappingNameColumn.getColumn().setWidth(200);
 
-		TreeViewerColumn lowerBoundColumn = new TreeViewerColumn(containerCheckedTreeViewer, SWT.LEFT);
-		lowerBoundColumn.getColumn().setText("Lower Bound");
-		lowerBoundColumn.setLabelProvider(new EAttributeLowerBoundLabelProvider());
-		lowerBoundColumn.getColumn().setWidth(90);
-
-		TreeViewerColumn upperBoundColumn = new TreeViewerColumn(containerCheckedTreeViewer, SWT.LEFT);
-		upperBoundColumn.getColumn().setText("Upper Bound");
-		upperBoundColumn.setLabelProvider(new EAttributeUpperBoundLabelProvider());
-		upperBoundColumn.getColumn().setWidth(90);
-
-		TreeViewerColumn typeColumn = new TreeViewerColumn(containerCheckedTreeViewer, SWT.LEFT);
-		typeColumn.getColumn().setText("Type");
-		typeColumn.setLabelProvider(new TypeLabelProvider());
-		typeColumn.getColumn().setWidth(100);
+		TreeViewerColumn mappingTypeColumn = new TreeViewerColumn(containerCheckedTreeViewer, SWT.LEFT);
+		mappingTypeColumn.getColumn().setText("Mapping Type");
+		mappingTypeColumn.setLabelProvider(new MappingTypeLabelProvider());
+		mappingTypeColumn.getColumn().setWidth(100);
 
 		containerCheckedTreeViewer.setUseHashlookup(true);
 		containerCheckedTreeViewer.getTree().setHeaderVisible(true);
@@ -207,7 +203,6 @@ public class MetaClassesSelectionPage extends WizardPage {
 			}
 		});
 
-
 		Button expandAll = new Button(expandCollapseContainer, SWT.NONE);
 		expandAll.setText("+");
 		expandAll.setToolTipText("Expand All");
@@ -215,16 +210,6 @@ public class MetaClassesSelectionPage extends WizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				containerCheckedTreeViewer.expandAll();
-			}
-		});
-
-		Button recommendedElements = new Button(expandCollapseContainer, SWT.NONE);
-		recommendedElements.setText("&Recommended Elements");
-		recommendedElements.setToolTipText("Check Recommended Elements");
-		recommendedElements.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				checkRecommendedElements(containerCheckedTreeViewer);
 			}
 		});
 
@@ -239,13 +224,8 @@ public class MetaClassesSelectionPage extends WizardPage {
 
 		final TextCellEditor cellEditor = new MyTextCellEditor(containerCheckedTreeViewer.getTree());
 
-		nameColumn.setEditingSupport(new NameEditingSupport(containerCheckedTreeViewer, cellEditor));
-		upperBoundColumn.setEditingSupport(new BoundEditingSupport(containerCheckedTreeViewer, cellEditor,
-				"upper"));
-
-		lowerBoundColumn.setEditingSupport(new BoundEditingSupport(containerCheckedTreeViewer, cellEditor,
-				"lower"));
-		typeColumn.setEditingSupport(new ComboBoxEditingSupport(containerCheckedTreeViewer));
+		mappingNameColumn.setEditingSupport(new NameEditingSupport(containerCheckedTreeViewer, cellEditor));
+		mappingTypeColumn.setEditingSupport(new ComboBoxEditingSupport(containerCheckedTreeViewer));
 
 
 		/************************** Edit *****************************/
@@ -253,60 +233,26 @@ public class MetaClassesSelectionPage extends WizardPage {
 		containerCheckedTreeViewer.getTree()
 				.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		setControl(container);
-	}
 
-	public void refreshPages() {
-		((ProfileToDSLWizard)this.getWizard()).refreshPages();
-	}
-
-	/**
-	 * Check the elements that not reference an UML element.
-	 * @param containerCheckedTreeViewer_p
-	 */
-	protected void checkRecommendedElements(ContainerCheckedTreeViewer containerCheckedTreeViewer_p) {
-		if (containerCheckedTreeViewer_p.getInput() instanceof List) {
-			List<?> treeInput = (List<?>)containerCheckedTreeViewer_p.getInput();
-			for (Object object : treeInput) {
-				if (object instanceof EClass) {
-					EClass eClass = (EClass)object;
-					if (eClass.getEStructuralFeatures().isEmpty()) {
-						containerCheckedTreeViewer_p.setChecked(object, true);
-						dslEAnnotation.setDslFactoryeAnnotation(object, "true");
-					} else {
-						for (EStructuralFeature eStructuralFeature : eClass.getEStructuralFeatures()) {
-							if (eStructuralFeature.getEType().eResource().getURI().toString()
-									.endsWith("uml.ecore")) {
-								containerCheckedTreeViewer_p.setChecked(eStructuralFeature, false);
-								dslEAnnotation.setDslFactoryeAnnotation(eStructuralFeature, "false");
-
-							} else {
-								containerCheckedTreeViewer_p.setChecked(eStructuralFeature, true);
-								dslEAnnotation.setDslFactoryeAnnotation(eStructuralFeature, "true");
-							}
-						}
-					}
-				}
-			}
-		}
-		dslEAnnotation.setDslFactoryeAnnotationToTrue(containerCheckedTreeViewer_p.getCheckedElements());
-		refreshPages();
 	}
 
 	/**
 	 * initialize the input of the meta classes selection page.
 	 */
 	public void initInput() {
+
+		dslEAnnotation = new DslEAnnotation(profileEcoreModel);
+
 		MetaClassesSelection metaClassesSelection = new MetaClassesSelection(profileEcoreModel);
 		metaClassesSelection.createCandidateMetaClassesAndReferences();
 		importedMetaClassesInTheProfile = metaClassesSelection.getImportedMetaClassesInTheProfile();
 		candidateMetaClassesForTheDSL = metaClassesSelection.getCandidateMetaClassesForTheDSL();
-			containerCheckedTreeViewer.setInput(candidateMetaClassesForTheDSL);
 
-		dslEAnnotation = new DslEAnnotation(profileEcoreModel);
 
-		comboBoxCellEditor.setInput(Tools.getAllEClassifiers(profileEcoreModel));
+		containerCheckedTreeViewer.setInput(profileEcoreModel.eContents());
+
+		comboBoxCellEditor.setInput(dslEAnnotation.getMAPPINGS());
 		containerCheckedTreeViewer.expandAll();
-		setAllChecked(containerCheckedTreeViewer, false);
 		containerCheckedTreeViewer.collapseAll();
 	}
 
@@ -349,7 +295,7 @@ public class MetaClassesSelectionPage extends WizardPage {
 			super(viewer);
 			comboBoxCellEditor = new ComboBoxViewerCellEditor((Composite)getViewer().getControl(),
 					SWT.READ_ONLY);
-			comboBoxCellEditor.setLabelProvider(new EcoreElementNameLabelProvider());
+			comboBoxCellEditor.setLabelProvider(new MappingTypeLabelProvider());
 			comboBoxCellEditor.setContentProvider(new ArrayContentProvider());
 		}
 
@@ -360,33 +306,25 @@ public class MetaClassesSelectionPage extends WizardPage {
 
 		@Override
 		protected boolean canEdit(Object element) {
-			if (element instanceof ETypedElement) {
 				return true;
-			}
-				return false;
 		}
 
 		@Override
 		protected Object getValue(Object element) {
-			if (element instanceof ETypedElement) {
-				return ((ETypedElement)element).getEType();
+			if (element instanceof EObject) {
+				return dslEAnnotation.getVSMMappingType(element);
 			}
 			return null;
 		}
 
 		@Override
 		protected void setValue(Object element, Object value) {
-			if (element instanceof ETypedElement && value instanceof EClassifier) {
-				ETypedElement data = (ETypedElement)element;
-				EClassifier newValue = (EClassifier)value;
-				/* only set new value if it differs from old one */
-				if (!data.getEType().equals(newValue)) {
-					data.setEType(newValue);
+			if (element instanceof EObject && value instanceof String) {
+				dslEAnnotation.setVSMMappingType(element, value.toString());
 					containerCheckedTreeViewer.update(element, null);
-
-				}
 			}
 		}
+
 	}
 
 	/**
@@ -417,11 +355,23 @@ public class MetaClassesSelectionPage extends WizardPage {
 	 * @author Mohamed-Lamine BOUKHANOUFA <a
 	 *         href="mailto:mohamed-lamine.boukhanoufa@obeo.fr">mohamed-lamine.boukhanoufa@obeo.fr</a> * *
 	 */
-	public class EcoreElementNameLabelProvider extends ColumnLabelProvider {
+	public class MappingNameLabelProvider extends ColumnLabelProvider {
 		@Override
 		public String getText(Object element) {
-			if (element instanceof ENamedElement) {
-				return ((ENamedElement)element).getName();
+			if (element instanceof EObject) {
+				return dslEAnnotation.getVSMMappingName(element);
+			}
+			return null;
+		}
+	}
+
+	public class MappingTypeLabelProvider extends ColumnLabelProvider {
+		@Override
+		public String getText(Object element) {
+			if (element instanceof String) {
+				return element.toString();
+			} else if (element instanceof EObject) {
+				return dslEAnnotation.getVSMMappingType(element);
 			}
 			return null;
 		}
@@ -447,16 +397,6 @@ public class MetaClassesSelectionPage extends WizardPage {
 		}
 	}
 
-	public class TypeLabelProvider extends ColumnLabelProvider {
-		@Override
-		public String getText(Object element) {
-			if (element instanceof ETypedElement) {
-				return ((ETypedElement)element).getEType().getName();
-			}
-			return null;
-		}
-	}
-
 	/**
 	 * Cell Editing support for the Meta Classes Selection page.
 	 *
@@ -477,16 +417,16 @@ public class MetaClassesSelectionPage extends WizardPage {
 		@Override
 		protected void setValue(Object element, Object value) {
 			if (element instanceof ENamedElement) {
-				((ENamedElement)element).setName(value.toString());
+				// ((ENamedElement)element).setName(value.toString());
+				dslEAnnotation.setVSMMappingName(element, value.toString());
 			}
 			containerCheckedTreeViewer_local.update(element, null);
-			refreshPages();
 		}
 
 		@Override
 		protected Object getValue(Object element) {
 			if (element instanceof ENamedElement) {
-				return ((ENamedElement)element).getName();
+				return dslEAnnotation.getVSMMappingName(element);
 			}
 			return element.toString();
 		}
@@ -499,68 +439,6 @@ public class MetaClassesSelectionPage extends WizardPage {
 		@Override
 		protected boolean canEdit(Object element) {
 			return true;
-		}
-	}
-
-	/**
-	 * Cell Editing support for the Meta Classes Selection page.
-	 *
-	 * @author Mohamed-Lamine BOUKHANOUFA <a
-	 *         href="mailto:mohamed-lamine.boukhanoufa@obeo.fr">mohamed-lamine.boukhanoufa@obeo.fr</a> * *
-	 */
-	public class BoundEditingSupport extends EditingSupport {
-		ContainerCheckedTreeViewer containerCheckedTreeViewer_local;
-
-		TextCellEditor cellEditor;
-
-		String bound;
-
-		public BoundEditingSupport(ContainerCheckedTreeViewer treeViewer, TextCellEditor cE, String boundPara) {
-			super(treeViewer);
-			containerCheckedTreeViewer_local = treeViewer;
-			cellEditor = cE;
-			bound = boundPara;
-		}
-
-		@Override
-		protected void setValue(Object element, Object value) {
-			if (element instanceof EAttribute) {
-				if (bound.equals("upper")
-						&& ((Tools.toInt(value) >= ((EAttribute)element).getLowerBound() && (Tools
-								.toInt(value) >= 0)) || (Tools.toInt(value) == -1))) {
-					((EAttribute)element).setUpperBound(Tools.toInt(value));
-				} else if (bound.equals("lower")
-						&& (Tools.toInt(value) >= 0 && ((Tools.toInt(value) <= ((EAttribute)element)
-								.getUpperBound()) || ((EAttribute)element).getUpperBound() == -1))) {
-					((EAttribute)element).setLowerBound(Tools.toInt(value));
-				}
-			}
-			containerCheckedTreeViewer_local.update(element, null);
-		}
-
-		@Override
-		protected Object getValue(Object element) {
-			if (element instanceof EAttribute) {
-				if (bound.equals("upper")) {
-					return Integer.toString(((EAttribute)element).getUpperBound());
-				} else if (bound.equals("lower")) {
-					return Integer.toString(((EAttribute)element).getLowerBound());
-				}
-			}
-			return element.toString();
-		}
-
-		@Override
-		protected TextCellEditor getCellEditor(Object element) {
-			return cellEditor;
-		}
-
-		@Override
-		protected boolean canEdit(Object element) {
-			if (element instanceof EAttribute) {
-				return true;
-			}
-				return false;
 		}
 	}
 
@@ -578,7 +456,7 @@ public class MetaClassesSelectionPage extends WizardPage {
 		// Here we provide a list of objects
 		public Object[] getElements(Object inputElement) {
 			if (inputElement instanceof List) {
-				return ((List<?>)inputElement).toArray();
+				return getSelectedElement((List<?>)inputElement).toArray();
 			}
 				return EMPTY_ARRAY;
 		}
@@ -596,8 +474,8 @@ public class MetaClassesSelectionPage extends WizardPage {
 			if (parentElement instanceof EClass) {
 				EClass eClass = (EClass)parentElement;
 				List<EObject> attributesReferences = new ArrayList<EObject>();
-				attributesReferences.addAll(eClass.getEStructuralFeatures());
-				return attributesReferences.toArray();
+				attributesReferences.addAll(eClass.getEReferences());
+				return getSelectedElement(attributesReferences).toArray();
 			}
 			return EMPTY_ARRAY;
 		}
@@ -617,7 +495,7 @@ public class MetaClassesSelectionPage extends WizardPage {
 	/**
 	 * Set the profile ecore resource.
 	 * 
-	 * @param profileEcoreResource
+	 * @param profileEcoreModel_p
 	 */
 	public void setProfileEcoreResource(EPackage profileEcoreModel_p) {
 		profileEcoreModel = profileEcoreModel_p;
@@ -632,19 +510,37 @@ public class MetaClassesSelectionPage extends WizardPage {
 	 *            <code>true</code> if the element should be checked, and <code>false</code> if it should be
 	 *            unchecked
 	 */
+
 	public void setAllChecked(ContainerCheckedTreeViewer containerCheckedTreeViewer_p, boolean state) {
 		if (containerCheckedTreeViewer_p.getInput() instanceof List) {
 			List<?> treeInput = (List<?>)containerCheckedTreeViewer_p.getInput();
 			for (Object object : treeInput) {
 				containerCheckedTreeViewer_p.setChecked(object, state);
-				dslEAnnotation.setDslFactoryeAnnotation(object, String.valueOf(state));
-				if (object instanceof EClass) {
-					for (EStructuralFeature eStructuralFeature : ((EClass)object).getEAllStructuralFeatures()) {
-						dslEAnnotation.setDslFactoryeAnnotation(eStructuralFeature, String.valueOf(state));
-					}
+			}
+		}
+	}
+
+	/**
+	 * Return the list of {@link Object} where the key 'Selected' of the EAnnotation 'DSL Factory' is true
+	 * 
+	 * @param elementsList
+	 * @return
+	 */
+	public EList<EObject> getSelectedElement(List<?> elementsList) {
+		EList<EObject> selectedElement = new BasicEList<EObject>();
+
+		for (Object object : elementsList) {
+			if (object instanceof EObject) {
+				if (dslEAnnotation.isSelectedInDslFactory(object)) {
+					selectedElement.add((EObject)object);
 				}
 			}
 		}
-		refreshPages();
+		return selectedElement;
 	}
+
+	public void refreshPages() {
+		((ProfileToDSLWizard)this.getWizard()).refreshPages();
+	}
+
 }

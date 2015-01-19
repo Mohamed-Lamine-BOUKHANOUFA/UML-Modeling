@@ -29,7 +29,9 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
  */
 public class MetaClassesSelection {
 
-	protected EPackage ecoreModel;
+	protected EPackage profileEcoreModel;
+
+	protected DslEAnnotation dslEAnnotation;
 
 	protected EList<EClassifier> importedMetaClassesInTheProfile = new BasicEList<EClassifier>();
 
@@ -60,7 +62,8 @@ public class MetaClassesSelection {
 	 * Constructor.
 	 */
 	public MetaClassesSelection(EPackage ecoreModelPara) {
-		ecoreModel = ecoreModelPara;
+		profileEcoreModel = ecoreModelPara;
+		dslEAnnotation = new DslEAnnotation(profileEcoreModel);
 	}
 
 	/********************************************************************************************/
@@ -73,9 +76,9 @@ public class MetaClassesSelection {
 	 */
 	public void createCandidateMetaClassesAndReferences() {
 
-		createCandidateMetaClassesAndReferences(ecoreModel);
+		createCandidateMetaClassesAndReferences(profileEcoreModel);
 		Tools.cleanModel(eObjectToDelete);
-		Tools.save(ecoreModel);
+		Tools.save(profileEcoreModel);
 	}
 
 	/**
@@ -86,6 +89,7 @@ public class MetaClassesSelection {
 	 *            the {@link EPackage}.
 	 */
 	public void createCandidateMetaClassesAndReferences(EPackage ecoreModel) {
+
 		for (EObject iterable_EObject : ecoreModel.eContents()) {
 			// Handle Base references: replace the base references by generalizations to new created abstract
 			// classes
@@ -105,12 +109,15 @@ public class MetaClassesSelection {
 			if (iterable_EObject instanceof EReference && eObject instanceof EClass) {
 				if (isBaseReference((EReference)iterable_EObject)) {
 					handleBaseReference((EReference)iterable_EObject, (EClass)eObject);
-
 				}
 			} else {
 				handleBaseReferencesOfEObject(iterable_EObject);
 			}
+			// Add the annotations for the elements without base reference.
+			dslEAnnotation.verifyEAnnotation(iterable_EObject);
 		}
+		// Add the annotations for the elements without base reference.
+		dslEAnnotation.verifyEAnnotation(eObject);
 	}
 
 	/**
@@ -143,9 +150,9 @@ public class MetaClassesSelection {
 		EClass importedMetaClassCopy;
 		EClass eType = (EClass)eReference.getEType();
 		String className = eType.getName();
-		if (ecoreModel.getEClassifier(className) != null
-				&& ecoreModel.getEClassifier(className) instanceof EClass) {
-			importedMetaClassCopy = (EClass)ecoreModel.getEClassifier(className);
+		if (profileEcoreModel.getEClassifier(className) != null
+				&& profileEcoreModel.getEClassifier(className) instanceof EClass) {
+			importedMetaClassCopy = (EClass)profileEcoreModel.getEClassifier(className);
 
 		} else {
 			importedMetaClassCopy = EcoreFactory.eINSTANCE.createEClass();
@@ -156,13 +163,17 @@ public class MetaClassesSelection {
 					importedMetaClassCopy.getEStructuralFeatures().add((EStructuralFeature)eObject);
 				}
 			}
-			ecoreModel.getEClassifiers().add(importedMetaClassCopy);
+			dslEAnnotation.addAnnotation(importedMetaClassCopy, eType);
+			dslEAnnotation.addAnnotationToEStructuralFeatures(importedMetaClassCopy.getEStructuralFeatures());
+			profileEcoreModel.getEClassifiers().add(importedMetaClassCopy);
 			importedMetaClassesInTheProfile.add(eReference.getEType());
 			candidateMetaClassesForTheDSL.add(importedMetaClassCopy);
 
 		}
 		eClass.getESuperTypes().add(importedMetaClassCopy);
 
+		dslEAnnotation.addAnnotation(eClass, eType);
+		dslEAnnotation.addAnnotationToEStructuralFeatures(eClass.getEAllStructuralFeatures());
 		eObjectToDelete.add(eReference);
 
 	}
@@ -205,6 +216,9 @@ public class MetaClassesSelection {
 				candidateEReference = getCandidateEReference(((EClass)importedMetaClasseInTheProfile),
 						ecoreModel);
 				candidateMetaClasseForTheDSL.getEStructuralFeatures().addAll(candidateEReference);
+				dslEAnnotation
+						.addAnnotationToEStructuralFeatures((EList<EStructuralFeature>)(EList<?>)candidateEReference);
+
 			}
 		}
 	}
@@ -261,6 +275,9 @@ public class MetaClassesSelection {
 					xBaseESupperClass.getEStructuralFeatures().addAll(
 							(Collection<? extends EStructuralFeature>)Tools.getCopy(eReferenceType
 									.getEAllAttributes()));
+					dslEAnnotation.addAnnotation(xBaseESupperClass, eReferenceType);
+					dslEAnnotation.addAnnotationToEStructuralFeatures(xBaseESupperClass
+							.getEStructuralFeatures());
 					candidateMetaClassesForTheDSL.add(xBaseESupperClass);
 					ecoreModel.getEClassifiers().add(xBaseESupperClass);
 

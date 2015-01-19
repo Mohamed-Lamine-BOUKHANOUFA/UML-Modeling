@@ -469,7 +469,7 @@ public class DSLInformationPage extends WizardPage {
 	void createEcoreModel() {
 		DSLInformation dSLInformation = new DSLInformation();
 		profileEcoreResource = dSLInformation.createEcoreModel(this.getWizard(), dslPluginName, rootProfile,
-				dslName);
+				dslName, dslURI);
 	}
 
 	/**

@@ -32,6 +32,7 @@ public class ProfileToDSLService {
 			ProfileToDSLWizard p2dWizard = new ProfileToDSLWizard(rootProfile);
 
 			final WizardDialog wd = new WizardDialog(activeShell, p2dWizard);
+			wd.setTitle("UML Profile to DSL exportation");
 			wd.setMinimumPageSize(300, 350);
 			wd.setPageSize(300, 350);
 			wd.create();
