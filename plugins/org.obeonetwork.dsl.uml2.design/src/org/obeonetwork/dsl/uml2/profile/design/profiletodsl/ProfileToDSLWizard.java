@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.obeonetwork.dsl.uml2.profile.design.profiletodsl;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -23,11 +26,13 @@ import org.obeonetwork.dsl.uml2.profile.design.services.GenericUMLProfileTools;
  */
 public class ProfileToDSLWizard extends Wizard {
 
-	protected DSLInformationPage pageOne;
+	protected MMInformationPage pageOne;
 
 	protected MetaClassesSelectionPage pageTwo;
 
 	protected MappingsSelectionPage pageThree;
+
+	protected VSMInformationPage pageFour;
 
 	protected Profile rootProfile;
 
@@ -35,6 +40,7 @@ public class ProfileToDSLWizard extends Wizard {
 
 	protected EPackage profileEcoreModel;
 
+	protected IProject mmPlugin;
 
 		/**
 	 * @return the profileEcoreModel
@@ -44,21 +50,27 @@ public class ProfileToDSLWizard extends Wizard {
 	}
 
 	/**
-	 * @param profileEcoreModel
+	 * @param profileEcoreModel_p
 	 *            the profileEcoreModel to set
 	 */
-	public void setProfileEcoreModel(EPackage profileEcoreModel) {
-		this.profileEcoreModel = profileEcoreModel;
+	public void setProfileEcoreModel(EPackage profileEcoreModel_p) {
+		this.profileEcoreModel = profileEcoreModel_p;
 	}
 
 	/**
 	 * @param profileEcoreResource_p
 	 *            the profileEcoreResource to set
 	 */
-	public void setProfileEcoreResource(Resource profileEcoreResource_p) {
+	public void setProfileEMFInformation(Resource profileEcoreResource_p, IProject mmPlugin_p) {
 		profileEcoreResource = profileEcoreResource_p;
-		profileEcoreModel = GenericUMLProfileTools.load(profileEcoreResource_p.getURI(),
+		mmPlugin = mmPlugin_p;
+		EObject eObject = GenericUMLProfileTools.load(profileEcoreResource_p.getURI(),
 				EcorePackage.Literals.EPACKAGE);
+		if (eObject instanceof EPackage) {
+			profileEcoreModel = (EPackage)eObject;
+		} else {
+			profileEcoreModel = null;
+		}
 	}
 
 	/**
@@ -81,18 +93,21 @@ public class ProfileToDSLWizard extends Wizard {
 	 */
 	@Override
 	public boolean performFinish() {
-		return false;
+		pageFour.createVsmInNewProject();
+		return true;
 	}
 
 	@Override
 	public void addPages() {
-		pageOne = new DSLInformationPage("Information about the DSL", rootProfile);
+		pageOne = new MMInformationPage("Information about the DSL", rootProfile);
 		pageTwo = new MetaClassesSelectionPage("MetaClasses selection", "Meta-classes selection");
 		pageThree = new MappingsSelectionPage("Mapping selection", "Mapping selection");
+		pageFour = new VSMInformationPage("Information about the VSM", "Information about the VSM");
 
 		addPage(pageOne);
 		addPage(pageTwo);
 		addPage(pageThree);
+		addPage(pageFour);
 
 
 	}
@@ -113,7 +128,8 @@ public class ProfileToDSLWizard extends Wizard {
 		pageTwo.initInput();
 		pageThree.setProfileEcoreResource(profileEcoreModel);
 		pageThree.initInput();
-
+		pageFour.setProfileEcoreResource(profileEcoreModel);
+		pageFour.initInput();
 	}
 
 	protected void refreshPages() {
@@ -121,4 +137,36 @@ public class ProfileToDSLWizard extends Wizard {
 		pageThree.refresh();
 
 	}
+
+	public void closeAll() {
+		try {
+			mmPlugin.close(null);
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void cleanMmPlugin() {
+		MMInformation.cleanMMPlugin(mmPlugin, profileEcoreModel);
+	}
+
+	public void closeMMPlugin() {
+		try {
+			mmPlugin.close(null);
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void openMMPlugin() {
+		try {
+			mmPlugin.open(null);
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 }

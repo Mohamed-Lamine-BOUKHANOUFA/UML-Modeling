@@ -30,7 +30,7 @@ public class ProfileToDSLService {
 		if (isProfile && ExportProfileService.validateUmlElementWithProgress(rootProfile)) {
 
 			ProfileToDSLWizard p2dWizard = new ProfileToDSLWizard(rootProfile);
-
+			p2dWizard.setWindowTitle("UML Profile to DSL");
 			final WizardDialog wd = new WizardDialog(activeShell, p2dWizard);
 			wd.setTitle("UML Profile to DSL exportation");
 			wd.setMinimumPageSize(300, 350);
