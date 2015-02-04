@@ -17,7 +17,6 @@ import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.ENamedElement;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
@@ -70,10 +69,6 @@ public class MappingsSelectionPage extends WizardPage {
 	protected ContainerCheckedTreeViewer containerCheckedTreeViewer;
 
 	private ComboBoxViewerCellEditor comboBoxCellEditor;
-
-	protected EList<EClassifier> importedMetaClassesInTheProfile = new BasicEList<EClassifier>();
-
-	protected EList<EClassifier> candidateMetaClassesForTheDSL = new BasicEList<EClassifier>();
 
 	/**
 	 * Constructor.
@@ -180,6 +175,7 @@ public class MappingsSelectionPage extends WizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				setAllChecked(containerCheckedTreeViewer, true);
+				refreshPages();
 			}
 		});
 
@@ -190,6 +186,7 @@ public class MappingsSelectionPage extends WizardPage {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				setAllChecked(containerCheckedTreeViewer, false);
+				refreshPages();
 			}
 		});
 
@@ -242,12 +239,6 @@ public class MappingsSelectionPage extends WizardPage {
 	public void initInput() {
 
 		dslEAnnotation = new DslEAnnotation(profileEcoreModel);
-
-		MetaClassesSelection metaClassesSelection = new MetaClassesSelection(profileEcoreModel);
-		metaClassesSelection.createCandidateMetaClassesAndReferences();
-		importedMetaClassesInTheProfile = metaClassesSelection.getImportedMetaClassesInTheProfile();
-		candidateMetaClassesForTheDSL = metaClassesSelection.getCandidateMetaClassesForTheDSL();
-
 
 		containerCheckedTreeViewer.setInput(profileEcoreModel.eContents());
 

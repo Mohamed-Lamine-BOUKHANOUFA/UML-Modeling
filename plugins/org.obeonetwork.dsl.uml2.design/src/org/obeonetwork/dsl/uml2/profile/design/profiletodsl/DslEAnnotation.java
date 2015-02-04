@@ -19,6 +19,7 @@ import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EAnnotation;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EModelElement;
+import org.eclipse.emf.ecore.ENamedElement;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
@@ -35,17 +36,17 @@ public class DslEAnnotation {
 	
 	protected EPackage ecoreModel;
 	
-	final protected String MAPPING = "_Mapping";
+	final public static String MAPPING = "_Mapping";
 
-	final protected String RELATION_BASED_EDGE = "RelationBasedEdge";
+	final public static String RELATION_BASED_EDGE = "RelationBasedEdge";
 
-	final protected String ELEMENT_BASED_EDGE = "ElementBasedEdge";
+	final public static String ELEMENT_BASED_EDGE = "ElementBasedEdge";
 
-	final protected String NODE = "Node";
+	final public static String NODE = "Node";
 
-	final protected String BORDERED_NODE = "BorderedNode";
+	final public static String BORDERED_NODE = "BorderedNode";
 
-	final protected String CONTAINER = "Container";
+	final public static String CONTAINER = "Container";
 
 	final protected List<String> MAPPINGS = Arrays.asList(CONTAINER, NODE, BORDERED_NODE, ELEMENT_BASED_EDGE,
 			RELATION_BASED_EDGE);
@@ -58,15 +59,15 @@ public class DslEAnnotation {
 
 	final protected String ANNOTATION_DSL_SOURCE_UML2MAPPING = "UML2Mapping";
 
-	final protected String ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_UMLSYSML_EQUIVALLENCES = "UML/SysML semantic equivalences";
+	final protected String ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_UMLSYSML_EQUIVALENCES = "UML/SysML semantic equivalences";
 
 	final protected String ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_ORIGINALDESCRIPTION = "Original Description";
 
-	final protected String ANNOTATION_DSL_SOURCE_DSL_FACTORY = "DSL Factory";
+	final protected String ANNOTATION_DSL_SOURCE_DSL_FACTORY = "DSLFactory";
 
 	final protected String ANNOTATION_DSL_SOURCE_DSL_FACTOR_KEY_SELECTED = "Selected";
 
-	final protected String ANNOTATION_DSL_SOURCE_VSM_MAPPING = "VSM Mapping";
+	final protected String ANNOTATION_DSL_SOURCE_VSM_MAPPING = "VSMMapping";
 
 	final protected String ANNOTATION_DSL_SOURCE_VSM_MAPPING_KEY_MAPPING_TYPE = "VSM Mapping Type";
 
@@ -75,6 +76,8 @@ public class DslEAnnotation {
 	final protected String ANNOTATION_DSL_SOURCE_VSM_MAPPING_KEY_MAPPING_STYLE = "VSM Mapping Style";
 
 	final protected String ANNOTATION_DSL_SOURCE_VSM_MAPPING_KEY_MAPPING_SELECTED = "Selected";
+
+	final protected String ANNOTATION_DSL_SOURCE_VSM_MAPPING_KEY_MAPPING_CONTAINER_OF_PORT = "Container of Port";
 
 	final protected String ANNOTATION_DSL_SOURCE_VSM_MAPPING_KEY_STYLE = "VSM Mapping Style";
 
@@ -172,12 +175,12 @@ public class DslEAnnotation {
 			eClass.getEAnnotations().add(eAnnotationMapping);
 		}
 		String uml2MappingEquivalences = eAnnotationMapping.getDetails().get(
-				ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_UMLSYSML_EQUIVALLENCES);
+				ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_UMLSYSML_EQUIVALENCES);
 		if (uml2MappingEquivalences != null) {
-			eAnnotationMapping.getDetails().put(ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_UMLSYSML_EQUIVALLENCES,
+			eAnnotationMapping.getDetails().put(ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_UMLSYSML_EQUIVALENCES,
 					uml2MappingEquivalences + ", " + eClassUml.getName());
 		} else {
-			eAnnotationMapping.getDetails().put(ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_UMLSYSML_EQUIVALLENCES,
+			eAnnotationMapping.getDetails().put(ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_UMLSYSML_EQUIVALENCES,
 					eClassUml.getName());
 		}
 
@@ -233,6 +236,12 @@ public class DslEAnnotation {
 
 			eAnnotationVSMMapping.getDetails().put(ANNOTATION_DSL_SOURCE_VSM_MAPPING_KEY_MAPPING_SELECTED,
 					"false");
+
+			if (Tools.contains(UMLPackage.Literals.ENCAPSULATED_CLASSIFIER.getName(),
+					(EList<ENamedElement>)(EList<?>)eClassUml.getEAllSuperTypes()) != null) {
+				eAnnotationVSMMapping.getDetails().put(
+						ANNOTATION_DSL_SOURCE_VSM_MAPPING_KEY_MAPPING_CONTAINER_OF_PORT, "true");
+			}
 		}
 
 	}
@@ -270,6 +279,7 @@ public class DslEAnnotation {
 		}
 		return defaultMapping;
 	}
+
 
 	/**
 	 * @param eObject
@@ -370,12 +380,12 @@ public class DslEAnnotation {
 	}
 
 	/**
-	 * Verify if the key 'Selected' of the {@link EAnnotation} 'DSL Factory' is <code>true</code> or not for a
-	 * given {@link Object}.
+	 * Verify if the key 'Selected' of the {@link EAnnotation} 'DSL Factory' is <code>false</code> or not for
+	 * a given {@link Object}.
 	 * 
 	 * @param object
 	 *            the {@link Object}.
-	 * @return <code>true</code> if the key 'Selected' is <code>true<code>, otherwise <code>false</code>
+	 * @return <code>false</code> if the key 'Selected' is <code>false<code>, otherwise <code>true</code>
 	 */
 	public boolean isSelectedInDslFactory(Object object) {
 
@@ -387,12 +397,12 @@ public class DslEAnnotation {
 			if (eAnnotationDslFactory != null
 					&& eAnnotationDslFactory.getDetails().get(ANNOTATION_DSL_SOURCE_DSL_FACTOR_KEY_SELECTED) != null) {
 				if (eAnnotationDslFactory.getDetails().get(ANNOTATION_DSL_SOURCE_DSL_FACTOR_KEY_SELECTED)
-						.equalsIgnoreCase("true")) {
-					return true;
+						.equalsIgnoreCase("false")) {
+					return false;
 				}
 			}
 		}
-		return false;
+		return true;
 	}
 
 	/**
