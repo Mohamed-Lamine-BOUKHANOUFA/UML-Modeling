@@ -16,6 +16,7 @@ import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
+import org.eclipse.emf.ecore.ENamedElement;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
@@ -39,6 +40,9 @@ public class MetaClassesSelection {
 
 	protected EList<EObject> eObjectToDelete = new BasicEList<EObject>();
 
+	final public static String ROOT_ELEMENT_NAME = "RootElement";
+
+	final protected String OWNED_REFERENCE = "owned";
 	/* *************************************************************
 	 * **************** Setters and Getters ************************
 	 * *************************************************************
@@ -77,6 +81,7 @@ public class MetaClassesSelection {
 	public void createCandidateMetaClassesAndReferences() {
 
 		createCandidateMetaClassesAndReferences(profileEcoreModel);
+		addRootElement(profileEcoreModel);
 		Tools.cleanModel(eObjectToDelete);
 		Tools.save(profileEcoreModel);
 	}
@@ -191,10 +196,9 @@ public class MetaClassesSelection {
 		if (ecoreModel.getEClassifier(className) != null
 				&& ecoreModel.getEClassifier(className) instanceof EClass) {
 			return (EClass)ecoreModel.getEClassifier(className);
-		} else {
-			for (EPackage iterable_eclassifier : ecoreModel.getESubpackages()) {
-				return getClass(className, iterable_eclassifier);
-			}
+		}
+		for (EPackage iterable_eclassifier : ecoreModel.getESubpackages()) {
+			return getClass(className, iterable_eclassifier);
 		}
 		return null;
 	}
@@ -299,5 +303,22 @@ public class MetaClassesSelection {
 
 	void prepareCandidateBaseClasses() {
 
+	}
+
+	public void addRootElement(EPackage profileEcoreModel_p) {
+		EClass rootElement = EcoreFactory.eINSTANCE.createEClass();
+		rootElement.setName(ROOT_ELEMENT_NAME);
+		for (EObject eObject : profileEcoreModel_p.eContents()) {
+			if (eObject instanceof EClassifier) {
+				EReference eReference = EcoreFactory.eINSTANCE.createEReference();
+				eReference.setName(OWNED_REFERENCE + ((ENamedElement)eObject).getName());
+				eReference.setEType((EClassifier)eObject);
+				eReference.setContainment(true);
+				eReference.setLowerBound(0);
+				eReference.setUpperBound(-1);
+				rootElement.getEStructuralFeatures().add(eReference);
+			}
+		}
+		profileEcoreModel_p.getEClassifiers().add(rootElement);
 	}
 }

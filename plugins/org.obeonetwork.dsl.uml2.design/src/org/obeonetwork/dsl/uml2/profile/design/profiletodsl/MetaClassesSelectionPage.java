@@ -300,7 +300,7 @@ public class MetaClassesSelectionPage extends WizardPage {
 		metaClassesSelection.createCandidateMetaClassesAndReferences();
 		importedMetaClassesInTheProfile = metaClassesSelection.getImportedMetaClassesInTheProfile();
 		candidateMetaClassesForTheDSL = metaClassesSelection.getCandidateMetaClassesForTheDSL();
-			containerCheckedTreeViewer.setInput(candidateMetaClassesForTheDSL);
+		containerCheckedTreeViewer.setInput(candidateMetaClassesForTheDSL);
 
 		dslEAnnotation = new DslEAnnotation(profileEcoreModel);
 
