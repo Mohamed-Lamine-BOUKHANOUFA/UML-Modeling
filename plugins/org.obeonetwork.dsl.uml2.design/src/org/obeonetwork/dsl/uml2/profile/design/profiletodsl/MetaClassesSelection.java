@@ -42,7 +42,7 @@ public class MetaClassesSelection {
 
 	final public static String ROOT_ELEMENT_NAME = "RootElement";
 
-	final protected String OWNED_REFERENCE = "owned";
+	final public static String OWNED_REFERENCE = "owned";
 	/* *************************************************************
 	 * **************** Setters and Getters ************************
 	 * *************************************************************
@@ -309,10 +309,10 @@ public class MetaClassesSelection {
 		EClass rootElement = EcoreFactory.eINSTANCE.createEClass();
 		rootElement.setName(ROOT_ELEMENT_NAME);
 		for (EObject eObject : profileEcoreModel_p.eContents()) {
-			if (eObject instanceof EClassifier) {
+			if (eObject instanceof EClass && !((EClass)eObject).isAbstract()) {
 				EReference eReference = EcoreFactory.eINSTANCE.createEReference();
 				eReference.setName(OWNED_REFERENCE + ((ENamedElement)eObject).getName());
-				eReference.setEType((EClassifier)eObject);
+				eReference.setEType((EClass)eObject);
 				eReference.setContainment(true);
 				eReference.setLowerBound(0);
 				eReference.setUpperBound(-1);
