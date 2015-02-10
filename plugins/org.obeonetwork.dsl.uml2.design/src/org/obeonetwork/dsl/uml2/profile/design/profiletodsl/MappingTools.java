@@ -110,61 +110,52 @@ public class MappingTools {
 	 */
 	public static EList<ContainerMapping> createContainedContainer(Layer layer, EReference eReference,
 			ContainerMapping umlDesignerPackageMapping) {
+		// The created mappings for this EReference.
 		EList<ContainerMapping> createdMapping = new BasicEList<ContainerMapping>();
-		EClass referenceType = eReference.getEReferenceType();
+		// The recursive mappings
+		EList<ContainerMapping> recursiveMappings = new BasicEList<ContainerMapping>();
 		EClass referenceContainer = (EClass)eReference.eContainer();
+		EClass referenceType = eReference.getEReferenceType();
+		EList<EClass> referenceTypes = new BasicEList<EClass>();
 
-		// Container creation
-		ContainerMapping newContainerMapping = createContainer(layer, eReference, umlDesignerPackageMapping,
-				false);
-		newContainerMapping.setName("Sub" + (referenceType).getName() + DslEAnnotation.MAPPING);
-		newContainerMapping.setDomainClass(referenceType.getName());
-		createdMapping.add(newContainerMapping);
-		// ****************************
-		// ----------------------------- code for the recursive mapping
-		// verify if the element is self referenced by this reference, if yes:
-		// 1-Exclude this class from the Semantic candidate expression of the mapping
-		// 2-create a new mapping for this element
-		ContainerMapping newSubContainerMapping = null;
-		if (referenceContainer.equals(referenceType)
-				|| referenceContainer.getEAllSuperTypes().contains(referenceType)) {
-			newContainerMapping.setSemanticCandidatesExpression("[self." + eReference.getName()
-					+ "->select(not oclIsKindOf(" + referenceContainer.getName() + "))/]");
-
-			// Container creation
-			newSubContainerMapping = DescriptionFactory.eINSTANCE.createContainerMapping();
-			newSubContainerMapping.setName("Sub" + (referenceContainer).getName() + DslEAnnotation.MAPPING);
-			newSubContainerMapping.setDomainClass(referenceContainer.getName());
-			// set the style
-			newSubContainerMapping.setStyle(EcoreUtil.copy(newContainerMapping.getStyle()));
-			// Set the Semantic candidate expression
-			newSubContainerMapping.setSemanticCandidatesExpression("feature:" + eReference.getName());
-			newSubContainerMapping.getReusedContainerMappings().add(newSubContainerMapping);
-			newSubContainerMapping.getReusedContainerMappings().add(newContainerMapping);
-			createdMapping.add(newSubContainerMapping);
+		if (!referenceType.isAbstract()) {
+			referenceTypes.add(referenceType);
 		} else {
-			newContainerMapping.getReusedContainerMappings().add(newContainerMapping);
+			referenceTypes.addAll(Tools.getEAllSubTypes(referenceType));
 		}
-		// ---------------------------------------------------------------
-		EList<EClass> allSubTypes = Tools.getEAllSubTypes(referenceContainer);
-		allSubTypes.add(referenceContainer);
-		EList<ContainerMapping> possibleContainerMappings = getMapping(layer, allSubTypes);
-		for (ContainerMapping possibleContainer : possibleContainerMappings) {
-			if (newContainerMapping.eContainer() == null) {
-				possibleContainer.getSubContainerMappings().add(newContainerMapping);
-				if (newSubContainerMapping != null) {
-					possibleContainer.getSubContainerMappings().add(newSubContainerMapping);
-				}
 
-			} else {
-				possibleContainer.getReusedContainerMappings().add(newContainerMapping);
-				if (newSubContainerMapping != null) {
-					possibleContainer.getReusedContainerMappings().add(newSubContainerMapping);
+		for (EClass eClass : referenceTypes) {
+			if (!eClass.isAbstract()) {
+				// Container creation
+				ContainerMapping newContainerMapping = createContainer(layer, eClass,
+						umlDesignerPackageMapping, false);
+				newContainerMapping.setName("Sub" + newContainerMapping.getName());
+				newContainerMapping.setSemanticCandidatesExpression("feature:" + eReference.getName());
+				createdMapping.add(newContainerMapping);
+				// code for the recursive mapping
+				// verify if the element is self referenced by this reference, if yes:
+				// reference all created Mappings in this new Mapping
+				if (eClass.equals(referenceContainer)
+						|| eClass.getEAllSuperTypes().contains(referenceContainer)) {
+					recursiveMappings.add(newContainerMapping);
 				}
-
+				// ---------------------------------------------------------------
+				EList<EClass> allSubTypes = Tools.getEAllSubTypes(referenceContainer);
+				allSubTypes.add(referenceContainer);
+				EList<ContainerMapping> possibleContainerMappings = getMapping(layer, allSubTypes);
+				for (ContainerMapping possibleContainer : possibleContainerMappings) {
+					if (newContainerMapping.eContainer() == null) {
+						possibleContainer.getSubContainerMappings().add(newContainerMapping);
+					} else {
+						possibleContainer.getReusedContainerMappings().add(newContainerMapping);
+					}
+				}
 			}
 		}
-		// ****************************
+		// code for the recursive mapping
+		for (ContainerMapping recursiveMapping : recursiveMappings) {
+			recursiveMapping.getReusedContainerMappings().addAll(createdMapping);
+		}
 		return createdMapping;
 	}
 
