@@ -42,6 +42,8 @@ public class DslEAnnotation {
 
 	final public static String ELEMENT_BASED_EDGE = "ElementBasedEdge";
 
+	final public static String CONTAINMENT_EDGE = "ContainmentEdge";
+
 	final public static String NODE = "Node";
 
 	final public static String BORDERED_NODE = "BorderedNode";
@@ -49,7 +51,7 @@ public class DslEAnnotation {
 	final public static String CONTAINER = "Container";
 
 	final protected List<String> MAPPINGS = Arrays.asList(CONTAINER, NODE, BORDERED_NODE, ELEMENT_BASED_EDGE,
-			RELATION_BASED_EDGE);
+			RELATION_BASED_EDGE, CONTAINMENT_EDGE);
 
 	final protected String ANNOTATION_UML_KEY_DOCUMENTATION = "documentation";
 

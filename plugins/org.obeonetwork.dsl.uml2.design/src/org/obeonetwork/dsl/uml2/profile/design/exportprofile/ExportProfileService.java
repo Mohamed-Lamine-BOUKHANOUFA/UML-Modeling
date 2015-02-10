@@ -119,6 +119,7 @@ public class ExportProfileService {
 
 				if (initParameters(rootProfile) == IDialogConstants.OK_ID
 						&& UMLProfileServices.defineAllProfiles(rootProfile)) {
+				Resource rootProfileResource = rootProfile.eResource();
 					GenericUMLProfileTools.save(rootProfile);
 					final IProject profilePlugin = createPluginProjectWithProgress(profilePluginName);
 
@@ -140,8 +141,7 @@ public class ExportProfileService {
 							.getFile(profileName + "."
 									+ UMLResource.FILE_EXTENSION);
 
-					final IFile rootProfileIFile = GenericUMLProfileTools
-							.resourceToIFile(rootProfile.eResource());
+				final IFile rootProfileIFile = GenericUMLProfileTools.resourceToIFile(rootProfileResource);
 					try {
 						rootProfileIFile.copy(profileCopyIFile.getFullPath(),
 								true, new NullProgressMonitor());

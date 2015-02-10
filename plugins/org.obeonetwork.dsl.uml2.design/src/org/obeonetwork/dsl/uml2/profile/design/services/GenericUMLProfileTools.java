@@ -19,7 +19,7 @@ import org.eclipse.emf.common.CommonPlugin;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.emf.ecore.EClassifier;
-import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
@@ -216,14 +216,14 @@ public class GenericUMLProfileTools {
 	 *            (an EElement)
 	 * @return EPackage
 	 */
-	public static EPackage load(final URI uri, final EClassifier type) {
-		EPackage package_ = null;
+	public static EObject load(final URI uri, final EClassifier type) {
+		EObject eObject_ = null;
 		final ResourceSet resourceSet = new ResourceSetImpl();
 
 		try {
 			final Resource resource = resourceSet.getResource(uri, true);
 
-			package_ = (EPackage) EcoreUtil.getObjectByType(
+			eObject_ = (EObject)EcoreUtil.getObjectByType(
 					resource.getContents(), type);
 		} catch (final WrappedException we) {
 			new LogServices().error(
@@ -232,22 +232,22 @@ public class GenericUMLProfileTools {
 			System.exit(1);
 		}
 
-		return package_;
+		return eObject_;
 	}
 
 	/**
 	 * Save a model to file.
 	 * 
-	 * @param package_
+	 * @param eObject
 	 */
-	public static void save(org.eclipse.uml2.uml.Package package_) {
+	public static void save(EObject eObject) {
 		Resource resource = null;
-		if (package_.eResource() != null) {
-			resource = package_.eResource();
+		if (eObject.eResource() != null) {
+			resource = eObject.eResource();
 			try {
 				resource.save(null);
 			} catch (final IOException ioe) {
-				new LogServices().error("save(" + package_.getClass()
+				new LogServices().error("save(" + eObject.getClass()
 						+ ") not handled", ioe);
 			}
 		}
@@ -256,30 +256,30 @@ public class GenericUMLProfileTools {
 	/**
 	 * Save a model to file of the a given uri.
 	 * 
-	 * @param package_
+	 * @param eObject
 	 * @param uri
 	 *            of the file
 	 */
-	public static void save(final org.eclipse.uml2.uml.Package package_,
+	public static void save(final EObject eObject,
 			final URI uri) {
 		final Resource resource = new ResourceSetImpl().createResource(uri);
-		resource.getContents().add(package_);
+		resource.getContents().add(eObject);
 
 		try {
 			resource.save(null);
 		} catch (IOException ioe) {
 			new LogServices().error(
-					"save(" + package_.getClass() + "," + uri.getClass()
+					"save(" + eObject.getClass() + "," + uri.getClass()
 							+ ") not handled", ioe);
 		}
 	}
 
 	/**
-	 * resolve resource to ifile.
+	 * resolve resource to {@link IFile}.
 	 * 
 	 * @param resource
 	 *            to resolve
-	 * @return ifile
+	 * @return {@link IFile}
 	 */
 	public static IFile resourceToIFile(final Resource resource) {
 		final URI uriEcoreProfile = resource.getURI();

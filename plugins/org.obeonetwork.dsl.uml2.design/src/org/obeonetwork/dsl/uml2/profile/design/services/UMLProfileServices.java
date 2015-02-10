@@ -79,7 +79,7 @@ public class UMLProfileServices {
 	 * @param allContentProfile
 	 *            to define
 	 */
-	private void defineProfileDialog(final Profile rootProfile, final List<Profile> allContentProfile) {
+	private static void defineProfileDialog(final Profile rootProfile, final List<Profile> allContentProfile) {
 		boolean result = false;
 
 		final String[] buttonYes = {OK};
@@ -295,7 +295,7 @@ public class UMLProfileServices {
 	 *            stereotype.
 	 * @return true if the extension between source and target is possible.
 	 */
-	private boolean canCreateExtension(final EObject source, final EObject target) {
+	private static boolean canCreateExtension(final EObject source, final EObject target) {
 		if (source instanceof Stereotype) {
 			final Stereotype stereotypeSource = (Stereotype)source;
 			if (target instanceof ElementImport) {
@@ -634,10 +634,10 @@ public class UMLProfileServices {
 	 */
 	public static Profile getProfileOwner(final Element umlElement) {
 
-		if (umlElement.getOwner() instanceof Profile)
+		if (umlElement.getOwner() instanceof Profile) {
 			return (Profile)umlElement.getOwner();
-		else
-			return getProfileOwner(umlElement.getOwner());
+		}
+		return getProfileOwner(umlElement.getOwner());
 	}
 
 	/**
