@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.obeonetwork.dsl.uml2.profile.design.profiletodsl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EClass;
@@ -37,7 +40,6 @@ public class MappingTools {
 
 	/**
 	 * Constructor.
-	 *
 	 */
 	public MappingTools() {
 	}
@@ -201,5 +203,49 @@ public class MappingTools {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Returns direct and indirect {@link ContainerMapping}s of a given {@link Layer}.
+	 * 
+	 * @param layer
+	 *            the given {@link Layer}
+	 * @return an {@link EList} of {@link ContainerMapping}
+	 */
+	public static EList<ContainerMapping> getAllContainerMappings(Layer layer) {
+		EList<ContainerMapping> ownedMappings = new BasicEList<ContainerMapping>();
+		for (ContainerMapping containerMapping : layer.getContainerMappings()) {
+			ownedMappings.add(containerMapping);
+			if (!containerMapping.getAllContainerMappings().isEmpty()) {
+				ownedMappings.addAll(getAllContainerMappings(containerMapping));
+			}
+		}
+		return ownedMappings;
+	}
+
+	/**
+	 * Returns direct and indirect {@link ContainerMapping}s of a given {@link ContainerMapping}.
+	 * 
+	 * @param container
+	 *            the given {@link ContainerMapping}
+	 * @return an {@link EList} of {@link ContainerMapping}
+	 */
+	public static EList<ContainerMapping> getAllContainerMappings(ContainerMapping container) {
+		EList<ContainerMapping> ownedMappings = new BasicEList<ContainerMapping>();
+
+		for (ContainerMapping containerMapping : container.getAllContainerMappings()) {
+			// this list is used to avoid the referenced (imported) mappings and handle the contained
+			// mappings.
+			List<ContainerMapping> subContainersOfContainerMapping = new ArrayList<ContainerMapping>();
+			subContainersOfContainerMapping.addAll(containerMapping.getAllContainerMappings());
+			subContainersOfContainerMapping.removeAll(containerMapping.getReusedContainerMappings());
+			if (!containerMapping.equals(container)) {
+				ownedMappings.add(containerMapping);
+				if (!subContainersOfContainerMapping.isEmpty()) {
+					ownedMappings.addAll(getAllContainerMappings(containerMapping));
+				}
+			}
+		}
+		return ownedMappings;
 	}
 }

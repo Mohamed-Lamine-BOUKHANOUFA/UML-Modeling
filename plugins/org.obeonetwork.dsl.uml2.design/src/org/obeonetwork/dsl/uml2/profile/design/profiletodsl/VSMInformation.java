@@ -32,6 +32,9 @@ import org.eclipse.sirius.diagram.description.DiagramDescription;
 import org.eclipse.sirius.diagram.description.EdgeMapping;
 import org.eclipse.sirius.diagram.description.Layer;
 import org.eclipse.sirius.diagram.description.NodeMapping;
+import org.eclipse.sirius.diagram.description.tool.ContainerCreationDescription;
+import org.eclipse.sirius.diagram.description.tool.ToolFactory;
+import org.eclipse.sirius.diagram.description.tool.ToolSection;
 import org.eclipse.sirius.ui.tools.api.project.ViewpointSpecificationProject;
 import org.eclipse.sirius.viewpoint.description.DescriptionPackage;
 import org.eclipse.sirius.viewpoint.description.Group;
@@ -39,6 +42,9 @@ import org.eclipse.sirius.viewpoint.description.JavaExtension;
 import org.eclipse.sirius.viewpoint.description.RepresentationDescription;
 import org.eclipse.sirius.viewpoint.description.UserColorsPalette;
 import org.eclipse.sirius.viewpoint.description.Viewpoint;
+import org.eclipse.sirius.viewpoint.description.tool.ChangeContext;
+import org.eclipse.sirius.viewpoint.description.tool.CreateInstance;
+import org.eclipse.sirius.viewpoint.description.tool.SetValue;
 import org.obeonetwork.dsl.uml2.profile.design.services.GenericUMLProfileTools;
 
 /**
@@ -59,11 +65,15 @@ public class VSMInformation {
 
 	private String DEFAULT_LAYER = "DefaultLayer";
 
+	private String DEFAULT_TOOLS_SECTION = "Tools";
+
 	private String UML_DESIGNER_CLASS_DIAGRAM_CLASS_LAYER = "Class";
 
 	private String UML_DESIGNER_CLASS_DIAGRAM = "Class Diagram";
 
 	private String UML_DESIGNER_VIEWPOINT_DESIGN = "Design";
+
+	private String FEATURE_NAME = "name";
 
 	/**
 	 * Constructor.
@@ -177,8 +187,7 @@ public class VSMInformation {
 				if (eObject instanceof EClass && ((EClass)eObject).isAbstract()) {
 					eCLassAndAbstract = true;
 				}
-				// }
-				// for (EObject eObject : ProfileEcoreModel.eContents()) {
+
 				if (!eCLassAndAbstract && eObject instanceof ENamedElement
 						&& dslEAnnotation.isSelectedInVsmMapping(eObject)) {
 
@@ -221,8 +230,58 @@ public class VSMInformation {
 				}
 			}
 
+			createCreationToolsForContainers(defaultLayer);
+
 		}
 		GenericUMLProfileTools.save(vsmGroup);
+	}
+
+	/**
+	 * Create the creation tool for all direct and indirect {@link ContainerMapping}s of a given {@link Layer}
+	 * .
+	 * 
+	 * @param layer
+	 *            the given {@link Layer}
+	 */
+	public void createCreationToolsForContainers(Layer layer) {
+		// Create the tools section
+		ToolSection toolSection = (ToolSection)Tools.contains(DEFAULT_TOOLS_SECTION,
+				(EList<ENamedElement>)(EList<?>)layer.getToolSections());
+		if (toolSection == null) {
+			toolSection = ToolFactory.eINSTANCE.createToolSection();
+			toolSection.setName(DEFAULT_TOOLS_SECTION);
+			layer.getToolSections().add(toolSection);
+		}
+
+		for (ContainerMapping containerMapping : MappingTools.getAllContainerMappings(layer)) {
+
+			// Container creation tool
+			ContainerCreationDescription containerCreationDescription = ToolFactory.eINSTANCE
+					.createContainerCreationDescription();
+			toolSection.getOwnedTools().add(containerCreationDescription);
+			containerCreationDescription.setName(containerMapping.getName() + "Creation");
+			containerCreationDescription.getContainerMappings().add(containerMapping);
+
+			// Change context operation to the container
+			ChangeContext changeContext = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+					.createChangeContext();
+			changeContext.setBrowseExpression("var:container");
+			containerCreationDescription.getInitialOperation().setFirstModelOperations(changeContext);
+
+			// create instance
+			CreateInstance createInstance = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+					.createCreateInstance();
+			createInstance.setReferenceName(containerMapping.getSemanticCandidatesExpression().substring(8));
+			createInstance.setTypeName(containerMapping.getDomainClass());
+			changeContext.getSubModelOperations().add(createInstance);
+
+			// set value for the name
+			SetValue setValue = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+					.createSetValue();
+			setValue.setFeatureName(FEATURE_NAME);
+			setValue.setValueExpression(containerMapping.getDomainClass());
+			createInstance.getSubModelOperations().add(setValue);
+		}
 	}
 
 
