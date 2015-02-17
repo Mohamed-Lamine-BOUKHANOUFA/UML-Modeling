@@ -434,6 +434,34 @@ public class DslEAnnotation {
 	}
 
 	/**
+	 * Get the UML/SysML semantic equivalences of the given {@link Object}.
+	 * 
+	 * @param object
+	 *            the given {@link Object}
+	 * @return the UML/SysML semantic equivalences
+	 */
+	public String getUml2MappingEquivalence(Object object) {
+		String uml2MappingEquivalence = new String();
+		if (object instanceof EModelElement) {
+			// UML2Mapping annotation
+			EAnnotation eAnnotationMapping = ((EModelElement)object).getEAnnotation(ecoreModel.getNsURI()
+					+ ANNOTATION_DSL_SOURCE_UML2MAPPING);
+			if (eAnnotationMapping != null
+					&& eAnnotationMapping.getDetails().get(
+							ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_UMLSYSML_EQUIVALENCES) != null) {
+				uml2MappingEquivalence = eAnnotationMapping.getDetails().get(
+						ANNOTATION_DSL_SOURCE_UML2MAPPING_KEY_UMLSYSML_EQUIVALENCES);
+			}
+		}
+		uml2MappingEquivalence = uml2MappingEquivalence.split(",")[0];
+		ENamedElement eNamedElement = Tools.contains(uml2MappingEquivalence, ecoreModel.eAllContents());
+		if (eNamedElement != null && !eNamedElement.equals(object)) {
+			return getUml2MappingEquivalence(eNamedElement);
+		}
+		return uml2MappingEquivalence;
+	}
+
+	/**
 	 * Set the mapping type of the {@link Object}.
 	 * 
 	 * @param object

@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.UniqueEList;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
@@ -59,6 +60,29 @@ public class Tools {
 		for (ENamedElement eNamedElement : eNamedElements) {
 			if (eNamedElement.getName().equals(name)) {
 				return eNamedElement;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Search a {@link ENamedElement} by a given name in a given {@link TreeIterator} of {@link ENamedElement}
+	 * .
+	 * 
+	 * @param name
+	 *            the given name
+	 * @param eNamedElements
+	 *            the {@link TreeIterator} of {@link ENamedElement}
+	 * @return the {@link ENamedElement} if found else <code>null</code>
+	 */
+	public static ENamedElement contains(String name, TreeIterator<EObject> eNamedElements) {
+		for (TreeIterator<EObject> iterator = eNamedElements; iterator.hasNext();) {
+			EObject eObject = iterator.next();
+			if (eObject instanceof ENamedElement) {
+				ENamedElement eNamedElement = (ENamedElement)eObject;
+				if (eNamedElement.getName().equals(name)) {
+					return eNamedElement;
+				}
 			}
 		}
 		return null;
