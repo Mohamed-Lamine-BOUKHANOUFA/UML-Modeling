@@ -21,6 +21,7 @@ import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer;
+import org.eclipse.sirius.viewpoint.description.IdentifiedElement;
 import org.obeonetwork.dsl.uml2.design.services.LogServices;
 
 /**
@@ -60,6 +61,25 @@ public class Tools {
 		for (ENamedElement eNamedElement : eNamedElements) {
 			if (eNamedElement.getName().equals(name)) {
 				return eNamedElement;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Search a {@link ENamedElement} by a given name in a given {@link EList} of {@link ENamedElement}.
+	 * 
+	 * @param name
+	 *            the given name
+	 * @param eNamedElements
+	 *            the {@link EList} of {@link ENamedElement}
+	 * @return the {@link ENamedElement} if found else <code>null</code>
+	 */
+	public static IdentifiedElement containsIdentifiedElement(String name,
+			EList<IdentifiedElement> identifiedElements) {
+		for (IdentifiedElement identifiedElement : identifiedElements) {
+			if (identifiedElement.getName().equals(name)) {
+				return identifiedElement;
 			}
 		}
 		return null;

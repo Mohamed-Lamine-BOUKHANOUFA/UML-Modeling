@@ -36,15 +36,23 @@ import org.eclipse.sirius.diagram.description.style.ContainerStyleDescription;
 import org.eclipse.sirius.diagram.description.style.FlatContainerStyleDescription;
 import org.eclipse.sirius.diagram.description.style.NodeStyleDescription;
 import org.eclipse.sirius.diagram.description.style.StyleFactory;
+import org.eclipse.sirius.diagram.description.tool.ContainerCreationDescription;
+import org.eclipse.sirius.diagram.description.tool.NodeCreationDescription;
+import org.eclipse.sirius.diagram.description.tool.ToolFactory;
+import org.eclipse.sirius.diagram.description.tool.ToolSection;
 import org.eclipse.sirius.viewpoint.description.ColorDescription;
 import org.eclipse.sirius.viewpoint.description.ComputedColor;
 import org.eclipse.sirius.viewpoint.description.Group;
+import org.eclipse.sirius.viewpoint.description.IdentifiedElement;
 import org.eclipse.sirius.viewpoint.description.InterpolatedColor;
 import org.eclipse.sirius.viewpoint.description.RepresentationDescription;
 import org.eclipse.sirius.viewpoint.description.UserColor;
 import org.eclipse.sirius.viewpoint.description.UserColorsPalette;
 import org.eclipse.sirius.viewpoint.description.UserFixedColor;
 import org.eclipse.sirius.viewpoint.description.Viewpoint;
+import org.eclipse.sirius.viewpoint.description.tool.ChangeContext;
+import org.eclipse.sirius.viewpoint.description.tool.CreateInstance;
+import org.eclipse.sirius.viewpoint.description.tool.SetValue;
 
 /**
  * @author Mohamed-Lamine BOUKHANOUFA <a
@@ -69,6 +77,11 @@ public class MappingTools {
 	private ContainerMapping defaultContainerMappingForStyle;
 
 	private NodeMapping defaultNodeMappingForStyle;
+
+	private String DEFAULT_TOOLS_SECTION = "Tools";
+
+	private String FEATURE_NAME = "name";
+
 
 	/**
 	 * Constructor. A set of tools for the Mappings management.
@@ -704,5 +717,110 @@ public class MappingTools {
 			}
 		}
 		return null;
+	}
+
+	// ***************************** Tools section **********************************
+	/**
+	 * Find a {@link ToolSection} in a given {@link Layer} by a given name. If not found, a new one is
+	 * created.
+	 * 
+	 * @param sectionName
+	 *            the given name
+	 * @param layer
+	 *            the given {@link Layer}
+	 * @return the found or the created {@link ToolSection}
+	 */
+	public static ToolSection createSectionTool(String sectionName, Layer layer) {
+		ToolSection toolSection = (ToolSection)Tools.containsIdentifiedElement(sectionName,
+				(EList<IdentifiedElement>)(EList<?>)layer.getToolSections());
+		if (toolSection == null) {
+			toolSection = ToolFactory.eINSTANCE.createToolSection();
+			toolSection.setName(sectionName);
+			layer.getToolSections().add(toolSection);
+		}
+		return toolSection;
+	}
+
+	/**
+	 * Create the creation tool for all direct and indirect {@link ContainerMapping}s of a given {@link Layer}
+	 * .
+	 * 
+	 * @param layer
+	 *            the given {@link Layer}
+	 */
+	public void createCreationToolsForContainers(Layer layer) {
+		// Create the tools section
+		ToolSection toolSection = MappingTools.createSectionTool(DEFAULT_TOOLS_SECTION, layer);
+
+		for (ContainerMapping containerMapping : MappingTools.getAllContainerMappings(layer)) {
+
+			// Container creation tool
+			ContainerCreationDescription containerCreationDescription = ToolFactory.eINSTANCE
+					.createContainerCreationDescription();
+			toolSection.getOwnedTools().add(containerCreationDescription);
+			containerCreationDescription.setName(containerMapping.getName() + "Creation");
+			containerCreationDescription.getContainerMappings().add(containerMapping);
+
+			// Change context operation to the container
+			ChangeContext changeContext = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+					.createChangeContext();
+			changeContext.setBrowseExpression("var:container");
+			containerCreationDescription.getInitialOperation().setFirstModelOperations(changeContext);
+
+			// create instance
+			CreateInstance createInstance = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+					.createCreateInstance();
+			createInstance.setReferenceName(containerMapping.getSemanticCandidatesExpression().substring(8));
+			createInstance.setTypeName(containerMapping.getDomainClass());
+			changeContext.getSubModelOperations().add(createInstance);
+
+			// set value for the name
+			SetValue setValue = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+					.createSetValue();
+			setValue.setFeatureName(FEATURE_NAME);
+			setValue.setValueExpression(containerMapping.getDomainClass());
+			createInstance.getSubModelOperations().add(setValue);
+		}
+	}
+
+	/**
+	 * Create the creation tool for all direct and indirect {@link NodeMapping}s of a given {@link Layer} .
+	 * 
+	 * @param layer
+	 *            the given {@link Layer}
+	 */
+	public void createCreationToolsForNodes(Layer layer) {
+		// Create the tools section
+		ToolSection toolSection = createSectionTool(DEFAULT_TOOLS_SECTION, layer);
+
+		for (NodeMapping nodeMapping : MappingTools.getAllNodeMappings(layer)) {
+
+			// Container creation tool
+			NodeCreationDescription nodeCreationDescription = ToolFactory.eINSTANCE
+					.createNodeCreationDescription();
+			toolSection.getOwnedTools().add(nodeCreationDescription);
+			nodeCreationDescription.setName(nodeMapping.getName() + "Creation");
+			nodeCreationDescription.getNodeMappings().add(nodeMapping);
+
+			// Change context operation to the container
+			ChangeContext changeContext = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+					.createChangeContext();
+			changeContext.setBrowseExpression("var:container");
+			nodeCreationDescription.getInitialOperation().setFirstModelOperations(changeContext);
+
+			// create instance
+			CreateInstance createInstance = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+					.createCreateInstance();
+			createInstance.setReferenceName(nodeMapping.getSemanticCandidatesExpression().substring(8));
+			createInstance.setTypeName(nodeMapping.getDomainClass());
+			changeContext.getSubModelOperations().add(createInstance);
+
+			// set value for the name
+			SetValue setValue = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+					.createSetValue();
+			setValue.setFeatureName(FEATURE_NAME);
+			setValue.setValueExpression(nodeMapping.getDomainClass());
+			createInstance.getSubModelOperations().add(setValue);
+		}
 	}
 }
