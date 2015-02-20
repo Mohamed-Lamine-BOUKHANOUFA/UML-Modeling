@@ -169,7 +169,7 @@ public class VSMInformation {
 			}
 
 			mappingTools.createCreationToolsForContainers(defaultLayer);
-			mappingTools.createCreationToolsForNodes(defaultLayer);
+			// mappingTools.createCreationToolsForNodes(defaultLayer);
 
 
 		}

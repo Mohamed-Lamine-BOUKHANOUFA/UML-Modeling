@@ -15,6 +15,7 @@ import java.util.List;
 
 import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.ENamedElement;
 import org.eclipse.emf.ecore.EObject;
@@ -28,7 +29,6 @@ import org.eclipse.sirius.diagram.description.AbstractNodeMapping;
 import org.eclipse.sirius.diagram.description.ContainerMapping;
 import org.eclipse.sirius.diagram.description.DescriptionFactory;
 import org.eclipse.sirius.diagram.description.DiagramDescription;
-import org.eclipse.sirius.diagram.description.EdgeMapping;
 import org.eclipse.sirius.diagram.description.Layer;
 import org.eclipse.sirius.diagram.description.NodeMapping;
 import org.eclipse.sirius.diagram.description.style.BundledImageDescription;
@@ -82,6 +82,7 @@ public class MappingTools {
 
 	private String FEATURE_NAME = "name";
 
+	private EPackage profileEcoreModel;
 
 	/**
 	 * Constructor. A set of tools for the Mappings management.
@@ -93,7 +94,8 @@ public class MappingTools {
 	 * @param umlDesignerGroup_p
 	 *            the {@link Group} from which the mapping styles will be reused
 	 */
-	public MappingTools(EPackage profileEcoreModel, Group vsmGroup_p, Group umlDesignerGroup_p) {
+	public MappingTools(EPackage profileEcoreModel_p, Group vsmGroup_p, Group umlDesignerGroup_p) {
+		profileEcoreModel = profileEcoreModel_p;
 		vsmGroup = vsmGroup_p;
 		umlDesignerGroup = umlDesignerGroup_p;
 
@@ -107,7 +109,7 @@ public class MappingTools {
 		defaultNodeMappingForStyle = getNodeMapping(umlDesignerClassLayer, "CD_Class");
 
 
-		dslEAnnotation = new DslEAnnotation(profileEcoreModel);
+		dslEAnnotation = new DslEAnnotation(profileEcoreModel_p);
 
 	}
 
@@ -171,23 +173,80 @@ public class MappingTools {
 
 
 		}
-		// if (mappingType.equals(DslEAnnotation.BORDERED_NODE)) {
-		// NodeMapping nodeMapping = DescriptionFactory.eINSTANCE.createNodeMapping();
-		// // nodeMapping.set
-		// nodeMapping.setName(((ENamedElement)eObject).getName() + DslEAnnotation.MAPPING);
-		// defaultLayer.getNodeMappings().add(nodeMapping);
-		// }
-		if (mappingType.equals(DslEAnnotation.ELEMENT_BASED_EDGE)) {
-			EdgeMapping edgeMapping = DescriptionFactory.eINSTANCE.createEdgeMapping();
-			edgeMapping.setName(((ENamedElement)eObject).getName() + DslEAnnotation.MAPPING);
-			layer.getEdgeMappings().add(edgeMapping);
+		
+		if (mappingType.equals(DslEAnnotation.BORDERED_NODE)) {
+			String originalStyle = dslEAnnotation.identifyTheVSMMapping((EClass)eObject);
+			if (mappingType.equals(originalStyle)) {
+				// ***********************************************
+				// To find the nodeMapping to reuse its style.
+				NodeMapping nodeMappingForStyle = getUml2BorderedNodeMappingEquivalence(eObject);
+				// ***********************************************
+				NodeMapping nodeMapping = MappingTools.createNode(layer, eObject,
+						nodeMappingForStyle.getStyle(), false);
+				createdMapping = nodeMapping;
+
+			} else if (originalStyle.equals(DslEAnnotation.CONTAINER)) {
+				// TODO to update
+
+				// ***********************************************
+				// To find the containerMapping to reuse its style.
+				ContainerMapping containerMappingForStyle = getUml2ContainerMappingEquivalence(eObject);
+				// ***********************************************
+				NodeMapping nodeMapping = MappingTools.createNode(layer, eObject,
+						MappingTools.getNodeStyle(containerMappingForStyle.getStyle(), vsmGroup), false);
+				createdMapping = nodeMapping;
+			}
+
+			EList<EClass> possibleContainerEClasses = getPossibleContainers((EClass)eObject);
+			EList<AbstractNodeMapping> possibleContainerMappings = getAbstractNodeMappings(layer,
+					possibleContainerEClasses);
+			for (AbstractNodeMapping possibleContainer : possibleContainerMappings) {
+				if (createdMapping.eContainer() == null) {
+					if (createdMapping instanceof NodeMapping) {
+						possibleContainer.getBorderedNodeMappings().add((NodeMapping)createdMapping);
+					}
+				} else {
+					if (createdMapping instanceof NodeMapping) {
+						possibleContainer.getReusedBorderedNodeMappings().add((NodeMapping)createdMapping);
+					}
+				}
+			}
+
+			// ///////////OLD
+			// NodeMapping nodeMapping = DescriptionFactory.eINSTANCE.createNodeMapping();
+			// // nodeMapping.set
+			// nodeMapping.setName(((ENamedElement)eObject).getName() + DslEAnnotation.MAPPING);
+			// layer.getNodeMappings().add(nodeMapping);
 		}
+		
+//		if (mappingType.equals(DslEAnnotation.ELEMENT_BASED_EDGE)) {
+//			EdgeMapping edgeMapping = DescriptionFactory.eINSTANCE.createEdgeMapping();
+//			edgeMapping.setName(((ENamedElement)eObject).getName() + DslEAnnotation.MAPPING);
+//			layer.getEdgeMappings().add(edgeMapping);
+//		}
 		// if (mappingType.equals(DslEAnnotation.RELATION_BASED_EDGE)) {
 		// EdgeMapping edgeMapping = DescriptionFactory.eINSTANCE.createEdgeMapping();
 		// edgeMapping.setName(((ENamedElement)eObject).getName() + DslEAnnotation.MAPPING);
 		// defaultLayer.getEdgeMappings().add(edgeMapping);
 		// }
 		return createdMapping;
+	}
+
+	public EList<EClass> getPossibleContainers(EClass eClass) {
+		EList<EClass> classes = new BasicEList<EClass>();
+		for (TreeIterator<EObject> iterator = profileEcoreModel.eAllContents(); iterator.hasNext();) {
+			EObject eObject = iterator.next();
+			if (eObject instanceof EReference && ((EReference)eObject).getEType() != null
+					&& eObject.eContainer() != null && eObject.eContainer() instanceof EClass) {
+				EReference eReference = ((EReference)eObject);
+				if (eReference.getEType().equals(eClass)
+						|| eClass.getEAllSuperTypes().contains(eReference.getEType())) {
+					classes.add((EClass)eObject.eContainer());
+					classes.addAll(Tools.getEAllSubTypes((EClass)eObject.eContainer()));
+				}
+			}
+		}
+		return classes;
 	}
 
 	/**
@@ -338,8 +397,7 @@ public class MappingTools {
 	 *            if <code>true</code> set the container of the new created {@link NodeMapping}.
 	 * @return the new created {@link NodeMapping}.
 	 */
-	public static NodeMapping createNode(Layer layer, EObject eObject,
- NodeStyleDescription nodeStyleToUse,
+	public static NodeMapping createNode(Layer layer, EObject eObject, NodeStyleDescription nodeStyleToUse,
 			boolean setTheContainer) {
 		// Node creation
 		NodeMapping newNodeMapping = DescriptionFactory.eINSTANCE.createNodeMapping();
@@ -353,8 +411,8 @@ public class MappingTools {
 		newNodeMapping.setStyle(EcoreUtil.copy(nodeStyleToUse));
 		// Use the color copied to the vsm Odesign
 		if (newNodeMapping.getStyle() instanceof FlatContainerStyleDescription) {
-			ColorDescription colorDescription = ((FlatContainerStyleDescription)newNodeMapping
-					.getStyle()).getForegroundColor();
+			ColorDescription colorDescription = ((FlatContainerStyleDescription)newNodeMapping.getStyle())
+					.getForegroundColor();
 			String colorName = new String();
 			if (colorDescription instanceof UserFixedColor) {
 				colorName = ((UserFixedColor)colorDescription).getName();
@@ -442,6 +500,25 @@ public class MappingTools {
 	}
 
 	/**
+	 * Find the Uml2 {@link NodeMapping} equivalence of a given {@link EObject}.
+	 * 
+	 * @param eObject
+	 *            the given {@link EObject}
+	 * @return the found {@link NodeMapping}
+	 */
+	public NodeMapping getUml2BorderedNodeMappingEquivalence(EObject eObject) {
+
+		String uml2MappingEquivalence = dslEAnnotation.getUml2MappingEquivalence(eObject);
+
+		NodeMapping nodeMappingForStyle = getBorderedNodeMapping(umlDesignerGroupVPDesign,
+				uml2MappingEquivalence);
+		if (nodeMappingForStyle == null) {
+			nodeMappingForStyle = defaultNodeMappingForStyle;
+		}
+		return nodeMappingForStyle;
+	}
+
+	/**
 	 * Find a {@link NodeMapping} in a given {@link Viewpoint} defined for a given Domain Class Name.
 	 * 
 	 * @param viewpoint
@@ -456,8 +533,7 @@ public class MappingTools {
 				DiagramDescription diagram = (DiagramDescription)representationDescription;
 				for (Layer layer : diagram.getAllLayers()) {
 					for (NodeMapping containerMapping : MappingTools.getAllNodeMappings(layer)) {
-						if (containerMapping.getDomainClass()
-.equals("uml." + nodeMappingDomainClassName)) {
+						if (containerMapping.getDomainClass().equals("uml." + nodeMappingDomainClassName)) {
 							return containerMapping;
 						}
 					}
@@ -465,6 +541,55 @@ public class MappingTools {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Find a {@link NodeMapping} in a given {@link Viewpoint} defined for a given Domain Class Name.
+	 * 
+	 * @param viewpoint
+	 *            given {@link Viewpoint}
+	 * @param nodeMappingDomainClassName
+	 *            the given Domain Class Name
+	 * @return the found {@link NodeMapping}
+	 */
+	public static NodeMapping getBorderedNodeMapping(Viewpoint viewpoint, String nodeMappingDomainClassName) {
+		for (RepresentationDescription representationDescription : viewpoint.getOwnedRepresentations()) {
+			if (representationDescription instanceof DiagramDescription) {
+				DiagramDescription diagram = (DiagramDescription)representationDescription;
+				for (Layer layer : diagram.getAllLayers()) {
+					for (NodeMapping containerMapping : MappingTools.getAllBorderedNodeMappings(layer)) {
+						if (containerMapping.getDomainClass().equals("uml." + nodeMappingDomainClassName)) {
+							return containerMapping;
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Find the {@link AbstractNodeMapping}s defined for a given list of {@link EClass} in a given
+	 * {@link Layer}.
+	 * 
+	 * @param layer
+	 *            the given {@link Layer}
+	 * @param eClassList
+	 *            the given list of {@link EClass}
+	 * @return list of found {@link AbstractNodeMapping}s
+	 */
+	public static EList<AbstractNodeMapping> getAbstractNodeMappings(Layer layer, EList<EClass> eClassList) {
+		EList<AbstractNodeMapping> containerMappings = new BasicEList<AbstractNodeMapping>();
+
+		for (EClass eclass : eClassList) {
+			for (AbstractNodeMapping containerMapping : getAllAbstractNodeMappings(layer)) {
+
+				if (containerMapping.getDomainClass().equals(eclass.getName())) {
+					containerMappings.add(containerMapping);
+				}
+			}
+		}
+		return containerMappings;
 	}
 
 	/**
@@ -480,7 +605,7 @@ public class MappingTools {
 		EList<ContainerMapping> containerMappings = new BasicEList<ContainerMapping>();
 
 		for (EClass eclass : eClassList) {
-			for (ContainerMapping containerMapping : layer.getContainerMappings()) {
+			for (ContainerMapping containerMapping : getAllContainerMappings(layer)) {
 
 				if (containerMapping.getDomainClass().equals(eclass.getName())) {
 					containerMappings.add(containerMapping);
@@ -535,6 +660,47 @@ public class MappingTools {
 	}
 
 	/**
+	 * Returns direct and indirect {@link AbstractNodeMapping}s of a given {@link Layer}.
+	 * 
+	 * @param layer
+	 *            the given {@link Layer}
+	 * @return an {@link EList} of {@link AbstractNodeMapping}
+	 */
+	public static EList<AbstractNodeMapping> getAllAbstractNodeMappings(Layer layer) {
+		EList<AbstractNodeMapping> ownedMappings = new BasicEList<AbstractNodeMapping>();
+		for (NodeMapping nodeMapping : layer.getNodeMappings()) {
+			ownedMappings.add(nodeMapping);
+			ownedMappings.addAll(getAllBorderedNodeMappings(nodeMapping));
+		}
+		for (ContainerMapping containerMapping : getAllContainerMappings(layer)) {
+			ownedMappings.add(containerMapping);
+			for (NodeMapping nodeMapping : containerMapping.getAllNodeMappings()) {
+				ownedMappings.add(nodeMapping);
+				ownedMappings.addAll(getAllBorderedNodeMappings(nodeMapping));
+			}
+		}
+		return ownedMappings;
+	}
+
+	/**
+	 * Returns direct and indirect BorderedNodeMappings of a given {@link NodeMapping}.
+	 * 
+	 * @param nodeMapping
+	 *            the given {@link NodeMapping}
+	 * @return an {@link EList} of BorderedNodeMappings
+	 */
+	public static EList<NodeMapping> getAllBorderedNodeMappings(NodeMapping nodeMapping) {
+		EList<NodeMapping> ownedMappings = new BasicEList<NodeMapping>();
+		for (NodeMapping borderedNodeMapping : nodeMapping.getAllBorderedNodeMappings()) {
+			ownedMappings.add(borderedNodeMapping);
+			if (!borderedNodeMapping.getAllBorderedNodeMappings().isEmpty()) {
+				ownedMappings.addAll(getAllBorderedNodeMappings(borderedNodeMapping));
+			}
+		}
+		return ownedMappings;
+	}
+
+	/**
 	 * Returns direct and indirect {@link NodeMapping}s of a given {@link Layer}.
 	 * 
 	 * @param layer
@@ -546,6 +712,23 @@ public class MappingTools {
 		ownedMappings.addAll(layer.getNodeMappings());
 		for (ContainerMapping containerMapping : getAllContainerMappings(layer)) {
 			ownedMappings.addAll(containerMapping.getAllNodeMappings());
+		}
+		return ownedMappings;
+	}
+
+	/**
+	 * Returns direct and indirect {@link NodeMapping}s of a given {@link Layer}.
+	 * 
+	 * @param layer
+	 *            the given {@link Layer}
+	 * @return an {@link EList} of {@link NodeMapping}
+	 */
+	public static EList<NodeMapping> getAllBorderedNodeMappings(Layer layer) {
+		// TODO update this method do not find all possible bordered node, those of the node.
+		EList<NodeMapping> ownedMappings = new BasicEList<NodeMapping>();
+		ownedMappings.addAll(layer.getNodeMappings());
+		for (ContainerMapping containerMapping : getAllContainerMappings(layer)) {
+			ownedMappings.addAll(containerMapping.getAllBorderedNodeMappings());
 		}
 		return ownedMappings;
 	}
