@@ -11,16 +11,19 @@
 package org.obeonetwork.dsl.uml2.profile.design.profiletodsl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.ENamedElement;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.EStructuralFeature.Setting;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.sirius.diagram.BundledImageShape;
 import org.eclipse.sirius.diagram.LabelPosition;
@@ -29,6 +32,7 @@ import org.eclipse.sirius.diagram.description.AbstractNodeMapping;
 import org.eclipse.sirius.diagram.description.ContainerMapping;
 import org.eclipse.sirius.diagram.description.DescriptionFactory;
 import org.eclipse.sirius.diagram.description.DiagramDescription;
+import org.eclipse.sirius.diagram.description.DiagramElementMapping;
 import org.eclipse.sirius.diagram.description.Layer;
 import org.eclipse.sirius.diagram.description.NodeMapping;
 import org.eclipse.sirius.diagram.description.style.BundledImageDescription;
@@ -53,6 +57,7 @@ import org.eclipse.sirius.viewpoint.description.Viewpoint;
 import org.eclipse.sirius.viewpoint.description.tool.ChangeContext;
 import org.eclipse.sirius.viewpoint.description.tool.CreateInstance;
 import org.eclipse.sirius.viewpoint.description.tool.SetValue;
+import org.eclipse.sirius.viewpoint.description.tool.ToolEntry;
 
 /**
  * @author Mohamed-Lamine BOUKHANOUFA <a
@@ -104,15 +109,12 @@ public class MappingTools {
 				UML_DESIGNER_CLASS_DIAGRAM);
 		Layer umlDesignerClassLayer = getLayer(umlDesignerClassDiagram,
 				UML_DESIGNER_CLASS_DIAGRAM_CLASS_LAYER);
-		defaultContainerMappingForStyle = getPackageMapping(umlDesignerClassLayer,
-				"CD_Package");
+		defaultContainerMappingForStyle = getPackageMapping(umlDesignerClassLayer, "CD_Package");
 		defaultNodeMappingForStyle = getNodeMapping(umlDesignerClassLayer, "CD_Class");
-
 
 		dslEAnnotation = new DslEAnnotation(profileEcoreModel_p);
 
 	}
-
 
 	/**
 	 * Create the possible {@link AbstractNodeMapping} for a given {@link EObject} in a given {@link Layer}.
@@ -126,9 +128,9 @@ public class MappingTools {
 	 *            set.
 	 * @return the created {@link AbstractNodeMapping}
 	 */
-	public AbstractNodeMapping createMappings(Layer layer, EObject eObject, boolean setContainer) {
+	public DiagramElementMapping createMappings(Layer layer, EObject eObject, boolean setContainer) {
 
-		AbstractNodeMapping createdMapping = null;
+		DiagramElementMapping createdDiagramElementMapping = null;
 
 		String mappingType = dslEAnnotation.getVSMMappingType(eObject);
 		if (mappingType.equals(DslEAnnotation.CONTAINER)) {
@@ -138,13 +140,13 @@ public class MappingTools {
 			// ***********************************************
 			ContainerMapping containerMapping = MappingTools.createContainer(layer, eObject,
 					containerMappingForStyle.getStyle(), setContainer);
-			createdMapping = containerMapping;
+			createdDiagramElementMapping = containerMapping;
 		}
 
 		if (mappingType.equals(DslEAnnotation.CONTAINMENT_EDGE) && eObject instanceof EReference) {
-			EList<AbstractNodeMapping> containedContainerMappings = createContainedContainer(layer,
-					(EReference)eObject);
-			createdMapping = containedContainerMappings.get(0);
+			EList<DiagramElementMapping> containedContainerMappings = createContainedContainer(layer,
+					(EReference)eObject, true);
+			createdDiagramElementMapping = containedContainerMappings.get(0);
 
 		}
 
@@ -157,7 +159,7 @@ public class MappingTools {
 				// ***********************************************
 				NodeMapping nodeMapping = MappingTools.createNode(layer, eObject,
 						nodeMappingForStyle.getStyle(), setContainer);
-				createdMapping = nodeMapping;
+				createdDiagramElementMapping = nodeMapping;
 
 			} else if (originalStyle.equals(DslEAnnotation.CONTAINER)) {
 
@@ -168,12 +170,11 @@ public class MappingTools {
 				NodeMapping nodeMapping = MappingTools.createNode(layer, eObject,
 						MappingTools.getNodeStyle(containerMappingForStyle.getStyle(), vsmGroup),
 						setContainer);
-				createdMapping = nodeMapping;
+				createdDiagramElementMapping = nodeMapping;
 			}
 
+		} else
 
-		}
-		
 		if (mappingType.equals(DslEAnnotation.BORDERED_NODE)) {
 			String originalStyle = dslEAnnotation.identifyTheVSMMapping((EClass)eObject);
 			if (mappingType.equals(originalStyle)) {
@@ -181,9 +182,8 @@ public class MappingTools {
 				// To find the nodeMapping to reuse its style.
 				NodeMapping nodeMappingForStyle = getUml2BorderedNodeMappingEquivalence(eObject);
 				// ***********************************************
-				NodeMapping nodeMapping = MappingTools.createNode(layer, eObject,
-						nodeMappingForStyle.getStyle(), false);
-				createdMapping = nodeMapping;
+				NodeMapping nodeMapping = createBorderedNode(layer, eObject, nodeMappingForStyle.getStyle(),
+						setContainer);
 
 			} else if (originalStyle.equals(DslEAnnotation.CONTAINER)) {
 				// TODO to update
@@ -192,61 +192,12 @@ public class MappingTools {
 				// To find the containerMapping to reuse its style.
 				ContainerMapping containerMappingForStyle = getUml2ContainerMappingEquivalence(eObject);
 				// ***********************************************
-				NodeMapping nodeMapping = MappingTools.createNode(layer, eObject,
-						MappingTools.getNodeStyle(containerMappingForStyle.getStyle(), vsmGroup), false);
-				createdMapping = nodeMapping;
-			}
-
-			EList<EClass> possibleContainerEClasses = getPossibleContainers((EClass)eObject);
-			EList<AbstractNodeMapping> possibleContainerMappings = getAbstractNodeMappings(layer,
-					possibleContainerEClasses);
-			for (AbstractNodeMapping possibleContainer : possibleContainerMappings) {
-				if (createdMapping.eContainer() == null) {
-					if (createdMapping instanceof NodeMapping) {
-						possibleContainer.getBorderedNodeMappings().add((NodeMapping)createdMapping);
-					}
-				} else {
-					if (createdMapping instanceof NodeMapping) {
-						possibleContainer.getReusedBorderedNodeMappings().add((NodeMapping)createdMapping);
-					}
-				}
-			}
-
-			// ///////////OLD
-			// NodeMapping nodeMapping = DescriptionFactory.eINSTANCE.createNodeMapping();
-			// // nodeMapping.set
-			// nodeMapping.setName(((ENamedElement)eObject).getName() + DslEAnnotation.MAPPING);
-			// layer.getNodeMappings().add(nodeMapping);
-		}
-		
-//		if (mappingType.equals(DslEAnnotation.ELEMENT_BASED_EDGE)) {
-//			EdgeMapping edgeMapping = DescriptionFactory.eINSTANCE.createEdgeMapping();
-//			edgeMapping.setName(((ENamedElement)eObject).getName() + DslEAnnotation.MAPPING);
-//			layer.getEdgeMappings().add(edgeMapping);
-//		}
-		// if (mappingType.equals(DslEAnnotation.RELATION_BASED_EDGE)) {
-		// EdgeMapping edgeMapping = DescriptionFactory.eINSTANCE.createEdgeMapping();
-		// edgeMapping.setName(((ENamedElement)eObject).getName() + DslEAnnotation.MAPPING);
-		// defaultLayer.getEdgeMappings().add(edgeMapping);
-		// }
-		return createdMapping;
-	}
-
-	public EList<EClass> getPossibleContainers(EClass eClass) {
-		EList<EClass> classes = new BasicEList<EClass>();
-		for (TreeIterator<EObject> iterator = profileEcoreModel.eAllContents(); iterator.hasNext();) {
-			EObject eObject = iterator.next();
-			if (eObject instanceof EReference && ((EReference)eObject).getEType() != null
-					&& eObject.eContainer() != null && eObject.eContainer() instanceof EClass) {
-				EReference eReference = ((EReference)eObject);
-				if (eReference.getEType().equals(eClass)
-						|| eClass.getEAllSuperTypes().contains(eReference.getEType())) {
-					classes.add((EClass)eObject.eContainer());
-					classes.addAll(Tools.getEAllSubTypes((EClass)eObject.eContainer()));
-				}
+				NodeMapping nodeMapping = createBorderedNode(layer, eObject,
+						MappingTools.getNodeStyle(containerMappingForStyle.getStyle(), vsmGroup),
+						setContainer);
 			}
 		}
-		return classes;
+		return createdDiagramElementMapping;
 	}
 
 	/**
@@ -311,9 +262,10 @@ public class MappingTools {
 	 *            the given {@link EReference}
 	 * @return the new created {@link AbstractNodeMapping}s.
 	 */
-	public EList<AbstractNodeMapping> createContainedContainer(Layer layer, EReference eReference) {
+	public EList<DiagramElementMapping> createContainedContainer(Layer layer, EReference eReference,
+			boolean setContainer) {
 		// The created mappings for this EReference.
-		EList<AbstractNodeMapping> createdMappings = new BasicEList<AbstractNodeMapping>();
+		EList<DiagramElementMapping> createdMappings = new BasicEList<DiagramElementMapping>();
 		// The recursive mappings
 		EList<AbstractNodeMapping> recursiveMappings = new BasicEList<AbstractNodeMapping>();
 		EClass referenceContainer = (EClass)eReference.eContainer();
@@ -329,55 +281,12 @@ public class MappingTools {
 		for (EClass eClass : referenceTypes) {
 			if (!eClass.isAbstract()) {
 				// Create a new mapping.
-				AbstractNodeMapping createdMapping = createMappings(layer, eClass, false);
-				createdMapping.setName("Sub" + createdMapping.getName());
-				createdMapping.setSemanticCandidatesExpression("feature:" + eReference.getName());
-				createdMappings.add(createdMapping);
-
-				// code for the recursive mapping
-				// verify if the element is self referenced by this reference, if yes:
-				// reference all created Mappings in this new Mapping
-				if (eClass.equals(referenceContainer)
-						|| eClass.getEAllSuperTypes().contains(referenceContainer)) {
-					recursiveMappings.add(createdMapping);
-				}
-
-				// add the new created mapping to possible container Mapping
-				EList<EClass> allSubTypes = Tools.getEAllSubTypes(referenceContainer);
-				allSubTypes.add(referenceContainer);
-				EList<ContainerMapping> possibleContainerMappings = getContainerMappings(layer, allSubTypes);
-				for (ContainerMapping possibleContainer : possibleContainerMappings) {
-					if (createdMapping.eContainer() == null) {
-						if (createdMapping instanceof ContainerMapping) {
-							possibleContainer.getSubContainerMappings().add((ContainerMapping)createdMapping);
-						} else if (createdMapping instanceof NodeMapping) {
-							possibleContainer.getSubNodeMappings().add((NodeMapping)createdMapping);
-						}
-					} else {
-						if (createdMapping instanceof ContainerMapping) {
-							possibleContainer.getReusedContainerMappings().add(
-									(ContainerMapping)createdMapping);
-						} else if (createdMapping instanceof NodeMapping) {
-							possibleContainer.getReusedNodeMappings().add((NodeMapping)createdMapping);
-						}
-					}
-				}
-			}
-		}
-
-		// code for the recursive mapping
-		for (AbstractNodeMapping recursiveMapping : recursiveMappings) {
-			if (recursiveMapping instanceof ContainerMapping) {
-				for (AbstractNodeMapping abstractNodeMapping : createdMappings) {
-					if (abstractNodeMapping instanceof ContainerMapping) {
-						((ContainerMapping)recursiveMapping).getReusedContainerMappings().add(
-								(ContainerMapping)abstractNodeMapping);
-					} else if (abstractNodeMapping instanceof NodeMapping) {
-
-						((ContainerMapping)recursiveMapping).getReusedNodeMappings().add(
-								(NodeMapping)abstractNodeMapping);
-					}
-				}
+				DiagramElementMapping createdDiagramElementMapping = createMappings(layer, eClass,
+						setContainer);
+				createdDiagramElementMapping.setName("Sub" + createdDiagramElementMapping.getName());
+				createdDiagramElementMapping.setSemanticCandidatesExpression("feature:"
+						+ eReference.getName());
+				createdMappings.add(createdDiagramElementMapping);
 			}
 		}
 		return createdMappings;
@@ -436,6 +345,127 @@ public class MappingTools {
 	}
 
 	/**
+	 * Create an new Bordered{@link NodeMapping} for a given {@link EObject} using a given
+	 * {@link NodeStyleDescription}. Add the new {@link NodeMapping} to a given {@link Layer}.
+	 * 
+	 * @param layer
+	 *            the given {@link Layer}
+	 * @param eObject
+	 *            the given {@link EObject}
+	 * @param nodeStyleToUse
+	 *            the given {@link NodeStyleDescription}.
+	 * @param setTheContainer
+	 *            if <code>true</code> set the container of the new created {@link NodeMapping}.
+	 * @return the new created Bordered{@link NodeMapping}.
+	 */
+	public NodeMapping createBorderedNode(Layer layer, EObject eObject, NodeStyleDescription nodeStyleToUse,
+			boolean setTheContainer) {
+		NodeMapping newNodeMapping = DescriptionFactory.eINSTANCE.createNodeMapping();
+
+		if (eObject != null && eObject instanceof EClass) {
+			EClass eClass = (EClass)eObject;
+
+			EList<EClass> eClassAndItsParents = new BasicEList<EClass>();
+			eClassAndItsParents.add(eClass);
+			eClassAndItsParents.addAll(eClass.getEAllSuperTypes());
+
+			Map<EObject, Collection<Setting>> crossReferences = EcoreUtil.UsageCrossReferencer.findAll(
+					eClassAndItsParents, profileEcoreModel);
+
+			for (Entry<EObject, Collection<Setting>> entrySet : crossReferences.entrySet()) {
+				entrySet.getKey();
+				Collection<Setting> settings = entrySet.getValue();
+				for (Setting setting : settings) {
+					if (setting.getEObject() instanceof EReference) {
+						EReference eReference = (EReference)setting.getEObject();
+						newNodeMapping = isNodeMappingExist(((ENamedElement)eObject).getName(), "feature:"
+								+ eReference.getName(), layer);
+						if (newNodeMapping == null) {
+							newNodeMapping = MappingTools.createNode(layer, eObject, nodeStyleToUse,
+									setTheContainer);
+							newNodeMapping.setSemanticCandidatesExpression("feature:" + eReference.getName());
+							newNodeMapping.setName(((ENamedElement)eObject).getName() + "_"
+									+ eReference.getName() + DslEAnnotation.MAPPING);
+						}
+					}
+				}
+			}
+		}
+		return newNodeMapping;
+	}
+
+	/**
+	 * Verify if a {@link NodeMapping} with a given domain class name and a semantic candidate expression
+	 * exists in a given {@link Layer}.
+	 * 
+	 * @param domainClass
+	 *            the given domain class
+	 * @param semanticCandidatesExpression
+	 *            the given semantic candidate expression
+	 * @param layer
+	 *            the given {@link Layer}.
+	 * @return the found {@link NodeMapping}, else null.
+	 */
+	public static NodeMapping isNodeMappingExist(String domainClass, String semanticCandidatesExpression,
+			Layer layer) {
+
+		EList<NodeMapping> allNodeMappings = getAllNodeMappings(layer);
+		for (NodeMapping nodeMapping : allNodeMappings) {
+			if (nodeMapping.getDomainClass().equals(domainClass)
+					&& nodeMapping.getSemanticCandidatesExpression().equals(semanticCandidatesExpression)) {
+				return nodeMapping;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Verify if a {@link NodeCreationDescription} for a given {@link NodeMapping} is defined in a given
+	 * {@link Layer}.
+	 * 
+	 * @param nodeMapping
+	 *            the given {@link NodeMapping}
+	 * @param layer
+	 *            the given {@link Layer}.
+	 * @return the found {@link NodeCreationDescription}, else <code>null</code>
+	 */
+	public NodeCreationDescription isNodeCreationToolExist(NodeMapping nodeMapping, Layer layer) {
+
+		ToolSection toolSection = getToolSection(DEFAULT_TOOLS_SECTION, layer);
+		for (ToolEntry toolEntry : toolSection.getOwnedTools()) {
+			if (toolEntry instanceof NodeCreationDescription
+					&& ((NodeCreationDescription)toolEntry).getNodeMappings().contains(nodeMapping)) {
+				return ((NodeCreationDescription)toolEntry);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Verify if a {@link ContainerCreationDescription} for a given {@link ContainerMapping} is defined in a
+	 * given {@link Layer}.
+	 * 
+	 * @param containerMapping
+	 *            the given {@link ContainerMapping}
+	 * @param layer
+	 *            the given {@link Layer}.
+	 * @return the found {@link ContainerCreationDescription}, else <code>null</code>
+	 */
+	public ContainerCreationDescription isContainerCreationToolExist(ContainerMapping containerMapping,
+			Layer layer) {
+
+		ToolSection toolSection = getToolSection(DEFAULT_TOOLS_SECTION, layer);
+		for (ToolEntry toolEntry : toolSection.getOwnedTools()) {
+			if (toolEntry instanceof ContainerCreationDescription
+					&& ((ContainerCreationDescription)toolEntry).getContainerMappings().contains(
+							containerMapping)) {
+				return ((ContainerCreationDescription)toolEntry);
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Find the Uml2 {@link ContainerMapping} equivalence of a given {@link EObject}.
 	 * 
 	 * @param eObject
@@ -452,7 +482,6 @@ public class MappingTools {
 		}
 		return containerMappingForStyle;
 	}
-
 
 	/**
 	 * Find a {@link ContainerMapping} in a given {@link Viewpoint} defined for a given Domain Class Name.
@@ -712,6 +741,7 @@ public class MappingTools {
 		ownedMappings.addAll(layer.getNodeMappings());
 		for (ContainerMapping containerMapping : getAllContainerMappings(layer)) {
 			ownedMappings.addAll(containerMapping.getAllNodeMappings());
+			ownedMappings.addAll(containerMapping.getAllBorderedNodeMappings());
 		}
 		return ownedMappings;
 	}
@@ -925,6 +955,24 @@ public class MappingTools {
 	}
 
 	/**
+	 * Find a {@link ToolSection} with a given name in a given {@link Layer}
+	 * 
+	 * @param sectionName
+	 *            the given name
+	 * @param layer
+	 *            the given {@link Layer}
+	 * @return the found {@link ToolSection}, else null
+	 */
+	public static ToolSection getToolSection(String sectionName, Layer layer) {
+		for (ToolSection toolSection : layer.getToolSections()) {
+			if (toolSection.getName().equals(sectionName)) {
+				return toolSection;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Create the creation tool for all direct and indirect {@link ContainerMapping}s of a given {@link Layer}
 	 * .
 	 * 
@@ -936,33 +984,37 @@ public class MappingTools {
 		ToolSection toolSection = MappingTools.createSectionTool(DEFAULT_TOOLS_SECTION, layer);
 
 		for (ContainerMapping containerMapping : MappingTools.getAllContainerMappings(layer)) {
+			ContainerCreationDescription containerCreationDescription = isContainerCreationToolExist(
+					containerMapping, layer);
+			if (containerCreationDescription == null) {
 
-			// Container creation tool
-			ContainerCreationDescription containerCreationDescription = ToolFactory.eINSTANCE
-					.createContainerCreationDescription();
-			toolSection.getOwnedTools().add(containerCreationDescription);
-			containerCreationDescription.setName(containerMapping.getName() + "Creation");
-			containerCreationDescription.getContainerMappings().add(containerMapping);
+				// Container creation tool
+				containerCreationDescription = ToolFactory.eINSTANCE.createContainerCreationDescription();
+				toolSection.getOwnedTools().add(containerCreationDescription);
+				containerCreationDescription.setName(containerMapping.getName() + "Creation");
+				containerCreationDescription.getContainerMappings().add(containerMapping);
 
-			// Change context operation to the container
-			ChangeContext changeContext = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
-					.createChangeContext();
-			changeContext.setBrowseExpression("var:container");
-			containerCreationDescription.getInitialOperation().setFirstModelOperations(changeContext);
+				// Change context operation to the container
+				ChangeContext changeContext = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+						.createChangeContext();
+				changeContext.setBrowseExpression("var:container");
+				containerCreationDescription.getInitialOperation().setFirstModelOperations(changeContext);
 
-			// create instance
-			CreateInstance createInstance = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
-					.createCreateInstance();
-			createInstance.setReferenceName(containerMapping.getSemanticCandidatesExpression().substring(8));
-			createInstance.setTypeName(containerMapping.getDomainClass());
-			changeContext.getSubModelOperations().add(createInstance);
+				// create instance
+				CreateInstance createInstance = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+						.createCreateInstance();
+				createInstance.setReferenceName(containerMapping.getSemanticCandidatesExpression().substring(
+						8));
+				createInstance.setTypeName(containerMapping.getDomainClass());
+				changeContext.getSubModelOperations().add(createInstance);
 
-			// set value for the name
-			SetValue setValue = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
-					.createSetValue();
-			setValue.setFeatureName(FEATURE_NAME);
-			setValue.setValueExpression(containerMapping.getDomainClass());
-			createInstance.getSubModelOperations().add(setValue);
+				// set value for the name
+				SetValue setValue = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+						.createSetValue();
+				setValue.setFeatureName(FEATURE_NAME);
+				setValue.setValueExpression(containerMapping.getDomainClass());
+				createInstance.getSubModelOperations().add(setValue);
+			}
 		}
 	}
 
@@ -977,33 +1029,134 @@ public class MappingTools {
 		ToolSection toolSection = createSectionTool(DEFAULT_TOOLS_SECTION, layer);
 
 		for (NodeMapping nodeMapping : MappingTools.getAllNodeMappings(layer)) {
+			NodeCreationDescription nodeCreationDescription = isNodeCreationToolExist(nodeMapping, layer);
+			if (nodeCreationDescription == null) {
+				// Container creation tool
+				nodeCreationDescription = ToolFactory.eINSTANCE.createNodeCreationDescription();
+				toolSection.getOwnedTools().add(nodeCreationDescription);
+				nodeCreationDescription.setName(nodeMapping.getName() + "Creation");
+				nodeCreationDescription.getNodeMappings().add(nodeMapping);
 
-			// Container creation tool
-			NodeCreationDescription nodeCreationDescription = ToolFactory.eINSTANCE
-					.createNodeCreationDescription();
-			toolSection.getOwnedTools().add(nodeCreationDescription);
-			nodeCreationDescription.setName(nodeMapping.getName() + "Creation");
-			nodeCreationDescription.getNodeMappings().add(nodeMapping);
+				// Change context operation to the container
+				ChangeContext changeContext = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+						.createChangeContext();
+				changeContext.setBrowseExpression("var:container");
+				nodeCreationDescription.getInitialOperation().setFirstModelOperations(changeContext);
 
-			// Change context operation to the container
-			ChangeContext changeContext = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
-					.createChangeContext();
-			changeContext.setBrowseExpression("var:container");
-			nodeCreationDescription.getInitialOperation().setFirstModelOperations(changeContext);
+				// create instance
+				CreateInstance createInstance = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+						.createCreateInstance();
+				createInstance.setReferenceName(nodeMapping.getSemanticCandidatesExpression().substring(8));
+				createInstance.setTypeName(nodeMapping.getDomainClass());
+				changeContext.getSubModelOperations().add(createInstance);
 
-			// create instance
-			CreateInstance createInstance = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
-					.createCreateInstance();
-			createInstance.setReferenceName(nodeMapping.getSemanticCandidatesExpression().substring(8));
-			createInstance.setTypeName(nodeMapping.getDomainClass());
-			changeContext.getSubModelOperations().add(createInstance);
+				// set value for the name
+				SetValue setValue = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
+						.createSetValue();
+				setValue.setFeatureName(FEATURE_NAME);
+				setValue.setValueExpression(nodeMapping.getDomainClass());
+				createInstance.getSubModelOperations().add(setValue);
+			}
+		}
+	}
 
-			// set value for the name
-			SetValue setValue = org.eclipse.sirius.viewpoint.description.tool.ToolFactory.eINSTANCE
-					.createSetValue();
-			setValue.setFeatureName(FEATURE_NAME);
-			setValue.setValueExpression(nodeMapping.getDomainClass());
-			createInstance.getSubModelOperations().add(setValue);
+	/**
+	 * Create all possible relationship between the {@link AbstractNodeMapping} of a given {@link layer}.
+	 * 
+	 * @param layer
+	 *            the given {@link layer}
+	 */
+	public void handleMappingsRelations(Layer layer) {
+		EList<AbstractNodeMapping> abstractNodeMappings = getAllAbstractNodeMappings(layer);
+		for (DiagramElementMapping diagramElementMapping : abstractNodeMappings) {
+			if (diagramElementMapping instanceof AbstractNodeMapping) {
+				AbstractNodeMapping abstractNodeMapping = (AbstractNodeMapping)diagramElementMapping;
+				ENamedElement eNamedElement = Tools.contains(abstractNodeMapping.getDomainClass(),
+						profileEcoreModel.eAllContents());
+				if (eNamedElement != null && eNamedElement instanceof EClass) {
+					EClass eClass = (EClass)eNamedElement;
+					String mappingType = dslEAnnotation.getVSMMappingType(eClass);
+
+					EList<EClass> eClassAndItsParents = new BasicEList<EClass>();
+					eClassAndItsParents.add(eClass);
+					eClassAndItsParents.addAll(eClass.getEAllSuperTypes());
+
+					Map<EObject, Collection<Setting>> result = EcoreUtil.UsageCrossReferencer.findAll(
+							eClassAndItsParents, profileEcoreModel);
+
+					for (Entry<EObject, Collection<Setting>> entrySet : result.entrySet()) {
+						entrySet.getKey();
+						Collection<Setting> settings = entrySet.getValue();
+						for (Setting setting : settings) {
+							if (setting.getEObject() instanceof EReference) {
+								EReference eReference = (EReference)setting.getEObject();
+								ENamedElement referencer = ((ENamedElement)eReference.eContainer());
+
+								for (AbstractNodeMapping abstractNodeMappingContainer : abstractNodeMappings) {
+
+									EClass domainClass = (EClass)Tools.contains(
+											abstractNodeMappingContainer.getDomainClass(),
+											profileEcoreModel.eAllContents());
+
+									if (domainClass != null
+											&& (domainClass.equals(referencer) || domainClass
+													.getEAllSuperTypes().contains(referencer))) {
+
+										if (abstractNodeMapping.getSemanticCandidatesExpression().equals(
+												"feature:" + eReference.getName())
+												&& !abstractNodeMapping.equals(abstractNodeMappingContainer)) {
+
+											if (eReference.isContainment()) {
+
+												// *******************Container Mapping
+												if (abstractNodeMappingContainer instanceof ContainerMapping) {
+													if (abstractNodeMapping instanceof ContainerMapping) {
+														if (abstractNodeMapping.eContainer() instanceof AbstractNodeMapping) {
+															((ContainerMapping)abstractNodeMappingContainer)
+																	.getReusedContainerMappings()
+																	.add((ContainerMapping)abstractNodeMapping);
+														} else {
+															((ContainerMapping)abstractNodeMappingContainer)
+																	.getSubContainerMappings()
+																	.add((ContainerMapping)abstractNodeMapping);
+														}
+													}
+													// *******************Node Mapping
+													if (abstractNodeMapping instanceof NodeMapping) {
+														if (abstractNodeMapping.eContainer() instanceof AbstractNodeMapping) {
+															((ContainerMapping)abstractNodeMappingContainer)
+																	.getReusedNodeMappings().add(
+																			(NodeMapping)abstractNodeMapping);
+														} else {
+															((ContainerMapping)abstractNodeMappingContainer)
+																	.getSubNodeMappings().add(
+																			(NodeMapping)abstractNodeMapping);
+														}
+													}
+												}
+												// *******************BORDERED_NODE Mapping
+											} else if (mappingType.equals(DslEAnnotation.BORDERED_NODE)
+													&& abstractNodeMapping instanceof NodeMapping) {
+												if (abstractNodeMapping.eContainer() instanceof AbstractNodeMapping) {
+													abstractNodeMappingContainer
+															.getReusedBorderedNodeMappings().add(
+																	(NodeMapping)abstractNodeMapping);
+												} else {
+													abstractNodeMappingContainer.getBorderedNodeMappings()
+															.add((NodeMapping)abstractNodeMapping);
+												}
+
+											}
+										}
+
+									}
+
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }

@@ -18,6 +18,8 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.emf.common.util.BasicEList;
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
@@ -26,6 +28,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.sirius.diagram.description.DescriptionFactory;
 import org.eclipse.sirius.diagram.description.DiagramDescription;
+import org.eclipse.sirius.diagram.description.DiagramElementMapping;
 import org.eclipse.sirius.diagram.description.Layer;
 import org.eclipse.sirius.ui.tools.api.project.ViewpointSpecificationProject;
 import org.eclipse.sirius.viewpoint.description.DescriptionPackage;
@@ -153,6 +156,7 @@ public class VSMInformation {
 			DslEAnnotation dslEAnnotation = new DslEAnnotation(profileEcoreModel);
 			MappingTools mappingTools = new MappingTools(profileEcoreModel, vsmGroup, umlDesignerGroup);
 			boolean eCLassAndAbstract = false;
+			EList<DiagramElementMapping> diagramElementMappings = new BasicEList<DiagramElementMapping>();
 			for (TreeIterator<EObject> iterator = profileEcoreModel.eAllContents(); iterator.hasNext();) {
 				EObject eObject = iterator.next();
 
@@ -164,12 +168,14 @@ public class VSMInformation {
 
 				if (!eCLassAndAbstract && eObject instanceof ENamedElement
 						&& dslEAnnotation.isSelectedInVsmMapping(eObject)) {
-					mappingTools.createMappings(defaultLayer, eObject, true);
+					diagramElementMappings.add(mappingTools.createMappings(defaultLayer, eObject, true));
 				}
 			}
 
+			mappingTools.handleMappingsRelations(defaultLayer);
+
 			mappingTools.createCreationToolsForContainers(defaultLayer);
-			// mappingTools.createCreationToolsForNodes(defaultLayer);
+			mappingTools.createCreationToolsForNodes(defaultLayer);
 
 
 		}
